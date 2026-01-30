@@ -7,6 +7,7 @@ export const registerEventRoutes = (fastify: FastifyInstance, eventService: Even
       stream?: string;
       type?: string;
       status?: string;
+      q?: string;
       limit?: string;
       offset?: string;
     };
@@ -14,6 +15,7 @@ export const registerEventRoutes = (fastify: FastifyInstance, eventService: Even
       stream: query.stream,
       type: query.type,
       status: query.status,
+      q: query.q,
       limit: query.limit ? Number(query.limit) : undefined,
       offset: query.offset ? Number(query.offset) : undefined
     });

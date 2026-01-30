@@ -5,6 +5,7 @@ export type EventFilters = {
   stream?: string;
   type?: string;
   status?: string;
+  q?: string;
   limit?: number;
   offset?: number;
 };
@@ -35,6 +36,13 @@ export class EventService {
     if (filters.stream) items = items.filter((event) => event.stream === filters.stream);
     if (filters.type) items = items.filter((event) => event.type === filters.type);
     if (filters.status) items = items.filter((event) => event.status === filters.status);
+    if (filters.q) {
+      const q = filters.q.toLowerCase();
+      items = items.filter((event) => {
+        const haystack = `${event.stream} ${event.type} ${event.summary}`.toLowerCase();
+        return haystack.includes(q);
+      });
+    }
 
     const ordered = items.slice().reverse();
     const total = ordered.length;

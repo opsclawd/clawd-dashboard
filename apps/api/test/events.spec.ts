@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { EventService } from '../src/application/events';
 import { EventRepository } from '../src/infrastructure/repositories/event-repository';
-import { EventSchema } from '../src/domain/entities/event';
 import path from 'node:path';
 import fs from 'node:fs';
 

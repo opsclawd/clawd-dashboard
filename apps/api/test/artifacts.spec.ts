@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ArtifactService } from '../src/application/artifacts';
 import { ArtifactRepository } from '../src/infrastructure/repositories/artifact-repository';
-import path from 'node:path';
 
 class DummyRepo extends ArtifactRepository {
   constructor() {

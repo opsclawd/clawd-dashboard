@@ -1,7 +1,6 @@
 import crypto from 'node:crypto';
 import { z } from 'zod';
 import { ArtifactSchema } from '../value-objects/artifact';
-import type { Artifact } from '../value-objects/artifact';
 import { StreamSchema } from '../value-objects/streams';
 
 const SeveritySchema = z.enum(['info', 'warn', 'error']);

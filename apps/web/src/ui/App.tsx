@@ -23,6 +23,17 @@ type ArtifactItem = {
   kind: string;
 };
 
+type SavedFilter = {
+  name: string;
+  stream: string;
+  type: string;
+  status: string;
+  limit: number;
+  query: string;
+};
+
+const SAVED_FILTERS_KEY = 'clawd.savedEventFilters';
+
 const columns: TaskItem['status'][] = ['backlog', 'next', 'in_progress', 'blocked', 'done'];
 
 const statusLabels: Record<TaskItem['status'], string> = {
@@ -88,6 +99,9 @@ export function App() {
   const [eventLimit, setEventLimit] = useState(25);
   const [eventOffset, setEventOffset] = useState(0);
   const [eventTotal, setEventTotal] = useState(0);
+  const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
+  const [savedFilterName, setSavedFilterName] = useState('');
+  const [activeSavedFilter, setActiveSavedFilter] = useState<string | null>(null);
 
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskStream, setNewTaskStream] = useState('job-search');
@@ -97,6 +111,7 @@ export function App() {
     if (eventStream) params.set('stream', eventStream);
     if (eventType) params.set('type', eventType);
     if (eventStatus) params.set('status', eventStatus);
+    if (eventSearch) params.set('q', eventSearch);
     params.set('limit', String(eventLimit));
     params.set('offset', String(eventOffset));
     const url = `http://127.0.0.1:5174/api/v1/events${params.toString() ? `?${params}` : ''}`;
@@ -108,7 +123,24 @@ export function App() {
         setError(null);
       })
       .catch((e) => setError(String(e)));
-  }, [eventStream, eventType, eventStatus, eventLimit, eventOffset]);
+  }, [eventStream, eventType, eventStatus, eventLimit, eventOffset, eventSearch]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = window.localStorage.getItem(SAVED_FILTERS_KEY);
+      if (stored) {
+        setSavedFilters(JSON.parse(stored));
+      }
+    } catch {
+      // ignore corrupted storage
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(SAVED_FILTERS_KEY, JSON.stringify(savedFilters));
+  }, [savedFilters]);
 
   useEffect(() => {
     fetch('http://127.0.0.1:5174/api/v1/tasks')
@@ -148,6 +180,41 @@ export function App() {
     setNewTaskTitle('');
   };
 
+  const resetActiveFilter = () => setActiveSavedFilter(null);
+
+  const handleSaveFilter = () => {
+    const name = savedFilterName.trim();
+    if (!name) return;
+    const newFilter: SavedFilter = {
+      name,
+      stream: eventStream,
+      type: eventType,
+      status: eventStatus,
+      limit: eventLimit,
+      query: eventSearch
+    };
+    setSavedFilters((prev) => [newFilter, ...prev.filter((filter) => filter.name.toLowerCase() !== name.toLowerCase())]);
+    setSavedFilterName('');
+    setActiveSavedFilter(name);
+  };
+
+  const handleApplySavedFilter = (filter: SavedFilter) => {
+    setEventStream(filter.stream);
+    setEventType(filter.type);
+    setEventStatus(filter.status);
+    setEventLimit(filter.limit);
+    setEventSearch(filter.query);
+    setEventOffset(0);
+    setActiveSavedFilter(filter.name);
+  };
+
+  const handleRemoveSavedFilter = (name: string) => {
+    setSavedFilters((prev) => prev.filter((filter) => filter.name !== name));
+    if (activeSavedFilter === name) {
+      setActiveSavedFilter(null);
+    }
+  };
+
   const tasksByStatus = useMemo(() => {
     const mapped = columns.reduce((acc, status) => {
       acc[status] = [];
@@ -166,6 +233,26 @@ export function App() {
     }
     return items.filter((ev) => ev.summary.toLowerCase().includes(query));
   }, [items, eventSearch]);
+
+  const safeEventLimit = Math.max(1, eventLimit);
+  const totalPages = Math.max(1, Math.ceil(eventTotal / safeEventLimit));
+  const currentPage = Math.max(0, Math.min(totalPages - 1, Math.floor(eventOffset / safeEventLimit)));
+  const pageWindow = 5;
+  const maxWindowStart = Math.max(0, totalPages - pageWindow);
+  const windowStart = Math.min(Math.max(0, currentPage - Math.floor(pageWindow / 2)), maxWindowStart);
+  const windowEnd = Math.min(totalPages, windowStart + pageWindow);
+  const visiblePages = Array.from({ length: Math.max(1, windowEnd - windowStart) }, (_, idx) => windowStart + idx);
+  const pageRangeStart = eventTotal === 0 ? 0 : eventOffset + 1;
+  const pageRangeEnd = Math.min(eventOffset + eventLimit, eventTotal);
+  const pageRangeLabel = eventTotal === 0 ? '0 of 0' : `${pageRangeStart}–${pageRangeEnd} of ${eventTotal}`;
+
+  const goToPage = (pageIndex: number) => {
+    setEventOffset(Math.max(0, pageIndex * eventLimit));
+  };
+  const goFirst = () => goToPage(0);
+  const goPrev = () => goToPage(Math.max(0, currentPage - 1));
+  const goNext = () => goToPage(Math.min(totalPages - 1, currentPage + 1));
+  const goLast = () => goToPage(totalPages - 1);
 
   return (
     <div className="app-shell">
@@ -270,6 +357,7 @@ export function App() {
                   onChange={(event) => {
                     setEventStream(event.target.value);
                     setEventOffset(0);
+                    resetActiveFilter();
                   }}
                 >
                   <option value="">All</option>
@@ -287,6 +375,7 @@ export function App() {
                   onChange={(event) => {
                     setEventType(event.target.value);
                     setEventOffset(0);
+                    resetActiveFilter();
                   }}
                 >
                   <option value="">All</option>
@@ -304,6 +393,7 @@ export function App() {
                   onChange={(event) => {
                     setEventStatus(event.target.value);
                     setEventOffset(0);
+                    resetActiveFilter();
                   }}
                 >
                   <option value="">All</option>
@@ -321,6 +411,7 @@ export function App() {
                   onChange={(event) => {
                     setEventLimit(Number(event.target.value));
                     setEventOffset(0);
+                    resetActiveFilter();
                   }}
                 >
                   {[10, 25, 50, 100].map((size) => (
@@ -339,31 +430,120 @@ export function App() {
                   type="search"
                   placeholder="Filter by summary"
                   value={eventSearch}
-                  onChange={(event) => setEventSearch(event.target.value)}
+                  onChange={(event) => {
+                    setEventSearch(event.target.value);
+                    resetActiveFilter();
+                  }}
                 />
               </div>
             </div>
 
             <div className="pagination-row">
-              <button
-                type="button"
-                className="ghost"
-                onClick={() => setEventOffset(Math.max(0, eventOffset - eventLimit))}
-                disabled={eventOffset === 0}
-              >
-                Prev
-              </button>
+              <div className="pagination-controls">
+                <button type="button" className="ghost" onClick={goFirst} disabled={currentPage === 0}>
+                  First
+                </button>
+                <button type="button" className="ghost" onClick={goPrev} disabled={currentPage === 0}>
+                  Prev
+                </button>
+              </div>
               <span className="page-meta">
-                {eventOffset + 1}–{Math.min(eventOffset + eventLimit, eventTotal)} of {eventTotal}
+                Page {currentPage + 1} of {totalPages} • Showing {pageRangeLabel}
               </span>
-              <button
-                type="button"
-                className="ghost"
-                onClick={() => setEventOffset(Math.min(eventTotal, eventOffset + eventLimit))}
-                disabled={eventOffset + eventLimit >= eventTotal}
-              >
-                Next
-              </button>
+              <div className="page-buttons">
+                {visiblePages.map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    className={`page-button${page === currentPage ? ' active' : ''}`}
+                    onClick={() => goToPage(page)}
+                  >
+                    {page + 1}
+                  </button>
+                ))}
+              </div>
+              <div className="pagination-controls">
+                <button
+                  type="button"
+                  className="ghost"
+                  onClick={goNext}
+                  disabled={currentPage >= totalPages - 1}
+                >
+                  Next
+                </button>
+                <button
+                  type="button"
+                  className="ghost"
+                  onClick={goLast}
+                  disabled={currentPage >= totalPages - 1}
+                >
+                  Last
+                </button>
+              </div>
+            </div>
+
+            <div className="saved-filters-section">
+              <div className="saved-filters-header">
+                <div>
+                  <h3>Saved filters</h3>
+                  <p className="panel-subtitle">Quickly jump back to curated views.</p>
+                </div>
+                {activeSavedFilter && (
+                  <button type="button" className="link-button" onClick={() => setActiveSavedFilter(null)}>
+                    Clear active filter
+                  </button>
+                )}
+              </div>
+              {savedFilters.length === 0 ? (
+                <p className="empty-state">No saved filters yet. Save a configuration to reuse it.</p>
+              ) : (
+                <div className="saved-filters-list">
+                  {savedFilters.map((filter) => (
+                    <div
+                      key={filter.name}
+                      className={`saved-filter-card ${activeSavedFilter === filter.name ? 'is-active' : ''}`}
+                    >
+                      <div>
+                        <p className="saved-filter-name">{filter.name}</p>
+                        <div className="saved-filter-meta">
+                          <span>{filter.stream || 'All streams'}</span>
+                          <span>{filter.type || 'All types'}</span>
+                          <span>{filter.status || 'Any status'}</span>
+                          <span>per page {filter.limit}</span>
+                          {filter.query && <span>q: {filter.query}</span>}
+                        </div>
+                      </div>
+                      <div className="saved-filter-actions">
+                        <button
+                          type="button"
+                          className="ghost small"
+                          onClick={() => handleApplySavedFilter(filter)}
+                        >
+                          {activeSavedFilter === filter.name ? 'Reapply' : 'Apply'}
+                        </button>
+                        <button
+                          type="button"
+                          className="link-button"
+                          onClick={() => handleRemoveSavedFilter(filter.name)}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="saved-filter-controls">
+                <input
+                  type="text"
+                  placeholder="Save current filters as..."
+                  value={savedFilterName}
+                  onChange={(event) => setSavedFilterName(event.target.value)}
+                />
+                <button type="button" className="primary" onClick={handleSaveFilter} disabled={!savedFilterName.trim()}>
+                  Save filter
+                </button>
+              </div>
             </div>
 
             <ul className="events-list">

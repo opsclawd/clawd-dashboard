@@ -7,7 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "echo 'no build yet'",
     "typecheck": "tsc -p ./tsconfig.json",
-    "test": "vitest run",
+    "test": "vitest run --coverage",
     "test:watch": "vitest",
     "lint": "echo 'no lint yet'"
   },
@@ -19,6 +19,7 @@
   "devDependencies": {
     "@types/node": "^25.1.0",
     "@types/supertest": "^6.0.3",
+    "@vitest/coverage-v8": "^4.0.18",
     "supertest": "^7.2.2",
     "tsx": "^4.21.0",
     "typescript": "^5.5.4",

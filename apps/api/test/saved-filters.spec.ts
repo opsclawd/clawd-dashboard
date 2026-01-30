@@ -22,4 +22,10 @@ describe('SavedFilterService', () => {
     service.remove('one');
     expect(repo.readAll()).toHaveLength(0);
   });
+
+  it('returns validation error for bad payload', () => {
+    const result = service.save({});
+    expect(result.success).toBe(false);
+    expect(result.error?.formErrors).toBeDefined();
+  });
 });

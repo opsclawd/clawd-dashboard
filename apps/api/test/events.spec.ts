@@ -30,4 +30,28 @@ describe('EventService', () => {
       fs.rmSync(tmp, { force: true });
     }
   });
+
+  it('returns validation error for invalid payload', () => {
+    const result = service.createEvent({});
+    expect(result.success).toBe(false);
+    expect(result.error?.formErrors).toBeDefined();
+  });
+
+  it('filters by stream/status', () => {
+    const payload = {
+      ts: new Date().toISOString(),
+      stream: 'dashboard',
+      type: 'plan',
+      summary: 'Filter test',
+      id: '55555555-5555-5555-5555-555555555555',
+      correlationId: '66666666-6666-6666-6666-666666666666',
+      actor: 'clawd',
+      severity: 'info',
+      status: 'done'
+    };
+    fs.writeFileSync(tmp, '', 'utf-8');
+    service.createEvent(payload);
+    const { items } = service.listEvents({ stream: 'dashboard', status: 'done' });
+    expect(items.length).toBeGreaterThanOrEqual(1);
+  });
 });

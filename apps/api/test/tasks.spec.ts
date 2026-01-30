@@ -29,4 +29,22 @@ describe('TaskService', () => {
     const stored = repo.readAll().find((t) => t.id === 't1');
     expect(stored?.status).toBe('done');
   });
+
+  it('returns validation error for malformed task', () => {
+    const result = service.createTask({ title: 'no stream' });
+    expect(result.success).toBe(false);
+    expect(result.error?.formErrors).toBeDefined();
+  });
+
+  it('filters tasks by stream and status', () => {
+    repo.append({
+      id: 't2',
+      ts: new Date().toISOString(),
+      stream: 'marketing',
+      title: 'stream test',
+      status: 'blocked'
+    });
+    const { items } = service.listTasks({ stream: 'marketing', status: 'blocked' });
+    expect(items).toHaveLength(1);
+  });
 });

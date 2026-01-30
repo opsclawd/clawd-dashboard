@@ -276,6 +276,15 @@ export function App() {
     setNewTaskTitle('');
   };
 
+  const moveTask = async (task: TaskItem, nextStatus: TaskItem['status']) => {
+    await fetch(`http://127.0.0.1:5174/api/v1/tasks/${task.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ status: nextStatus })
+    });
+    setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: nextStatus } : t)));
+  };
+
   const resetActiveFilter = () => setActiveSavedFilter(null);
 
   const handleSaveFilter = async () => {
@@ -439,6 +448,26 @@ export function App() {
                             <div className="task-meta">
                               <span className="task-stream">[{task.stream}]</span>
                               <span className="task-time">{formatTimestamp(task.ts)}</span>
+                            </div>
+                            <div className="task-actions">
+                              {column !== 'backlog' && (
+                                <button
+                                  type="button"
+                                  className="ghost"
+                                  onClick={() => moveTask(task, columns[Math.max(0, columns.indexOf(column) - 1)])}
+                                >
+                                  ←
+                                </button>
+                              )}
+                              {column !== 'done' && (
+                                <button
+                                  type="button"
+                                  className="ghost"
+                                  onClick={() => moveTask(task, columns[Math.min(columns.length - 1, columns.indexOf(column) + 1)])}
+                                >
+                                  →
+                                </button>
+                              )}
                             </div>
                           </li>
                         ))}

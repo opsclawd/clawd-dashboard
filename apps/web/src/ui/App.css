@@ -277,6 +277,13 @@ button.primary:hover {
   font-family: 'JetBrains Mono', 'SFMono-Regular', monospace;
 }
 
+.task-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
 .events-panel .filters-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

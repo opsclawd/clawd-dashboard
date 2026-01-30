@@ -18,6 +18,6 @@ export const registerGitRoutes = (fastify: FastifyInstance, gitService: GitServi
   fastify.get('/api/v1/git/diff/:sha', async (req) => {
     const params = req.params as { sha: string };
     const query = req.query as { path?: string };
-    return gitService.getDiff({ sha: params.sha, path: query.path });
+    return gitService.getDiff(params.sha, query.path);
   });
 };

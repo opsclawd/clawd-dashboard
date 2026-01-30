@@ -8,7 +8,7 @@ Senior Software Engineer / Full‑Stack Developer with 14+ years of web and appl
 **Languages:** JavaScript (10+ yrs), TypeScript, SQL (10+ yrs), PHP, Java
 **Frontend:** React, Next.js, Vue, Vuex, Redux, SCSS, Enzyme
 **Backend:** Node.js (6+ yrs), Laravel, CakePHP, Clean Architecture, DDD
-**Data:** PostgreSQL, MySQL, Neo4j, Firestore (NoSQL), Gel
+**Data:** PostgreSQL, MySQL, Neo4j, Firestore (NoSQL), GraphQL
 **Cloud/DevOps:** AWS (Cognito), Docker, Kubernetes, GitHub Actions, GitLab CI, Azure CI/CD, Azure DevOps
 **Tools:** Kafka, Jest, Selenium, CI/CD pipelines
 
@@ -16,7 +16,7 @@ Senior Software Engineer / Full‑Stack Developer with 14+ years of web and appl
 
 **Senior Full Stack Developer** — Alberta Energy Regulator (Calgary, AB)  
 *Sep 2024 – Present*  
-Regulatory Compliance Platform (energy sector)
+Regulatory Compliance Platform
 - Architected clean‑architecture backend for the compliance modernization project.
 - Built services with **TypeScript + Node + Gel** using **DDD** patterns.
 - Deployed microservices on **Kubernetes + Docker**; managed CI/CD in **Azure DevOps**.

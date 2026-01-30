@@ -5,6 +5,8 @@ export type EventFilters = {
   stream?: string;
   type?: string;
   status?: string;
+  limit?: number;
+  offset?: number;
 };
 
 export type EventRepositoryPort = {
@@ -33,7 +35,14 @@ export class EventService {
     if (filters.stream) items = items.filter((event) => event.stream === filters.stream);
     if (filters.type) items = items.filter((event) => event.type === filters.type);
     if (filters.status) items = items.filter((event) => event.status === filters.status);
-    return { items: items.slice(-200).reverse() };
+
+    const ordered = items.slice().reverse();
+    const total = ordered.length;
+    const limit = Math.max(1, Math.min(filters.limit ?? 50, 500));
+    const offset = Math.max(0, filters.offset ?? 0);
+    const paged = ordered.slice(offset, offset + limit);
+
+    return { items: paged, total, limit, offset };
   }
 
   createEvent(payload: unknown): CreateEventResult {

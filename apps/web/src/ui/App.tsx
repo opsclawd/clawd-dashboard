@@ -85,6 +85,9 @@ export function App() {
   const [eventType, setEventType] = useState('');
   const [eventStatus, setEventStatus] = useState('');
   const [eventSearch, setEventSearch] = useState('');
+  const [eventLimit, setEventLimit] = useState(25);
+  const [eventOffset, setEventOffset] = useState(0);
+  const [eventTotal, setEventTotal] = useState(0);
 
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskStream, setNewTaskStream] = useState('job-search');
@@ -94,15 +97,18 @@ export function App() {
     if (eventStream) params.set('stream', eventStream);
     if (eventType) params.set('type', eventType);
     if (eventStatus) params.set('status', eventStatus);
+    params.set('limit', String(eventLimit));
+    params.set('offset', String(eventOffset));
     const url = `http://127.0.0.1:5174/api/v1/events${params.toString() ? `?${params}` : ''}`;
     fetch(url)
       .then((r) => r.json())
       .then((data) => {
         setItems(data.items ?? []);
+        setEventTotal(data.total ?? 0);
         setError(null);
       })
       .catch((e) => setError(String(e)));
-  }, [eventStream, eventType, eventStatus]);
+  }, [eventStream, eventType, eventStatus, eventLimit, eventOffset]);
 
   useEffect(() => {
     fetch('http://127.0.0.1:5174/api/v1/tasks')
@@ -253,13 +259,19 @@ export function App() {
                 <h2>Recent events</h2>
                 <p className="panel-subtitle">Audit log entries streamed from Clawd.</p>
               </div>
-              <span className="panel-count">{filteredEvents.length} matches</span>
+              <span className="panel-count">{eventTotal} total</span>
             </div>
 
             <div className="filters-row">
               <label>
                 <span className="input-label">Stream</span>
-                <select value={eventStream} onChange={(event) => setEventStream(event.target.value)}>
+                <select
+                  value={eventStream}
+                  onChange={(event) => {
+                    setEventStream(event.target.value);
+                    setEventOffset(0);
+                  }}
+                >
                   <option value="">All</option>
                   {streamOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -270,7 +282,13 @@ export function App() {
               </label>
               <label>
                 <span className="input-label">Type</span>
-                <select value={eventType} onChange={(event) => setEventType(event.target.value)}>
+                <select
+                  value={eventType}
+                  onChange={(event) => {
+                    setEventType(event.target.value);
+                    setEventOffset(0);
+                  }}
+                >
                   <option value="">All</option>
                   {eventTypeOptions.map((typeOption) => (
                     <option key={typeOption} value={typeOption}>
@@ -281,11 +299,33 @@ export function App() {
               </label>
               <label>
                 <span className="input-label">Status</span>
-                <select value={eventStatus} onChange={(event) => setEventStatus(event.target.value)}>
+                <select
+                  value={eventStatus}
+                  onChange={(event) => {
+                    setEventStatus(event.target.value);
+                    setEventOffset(0);
+                  }}
+                >
                   <option value="">All</option>
                   {eventStatusOptions.map((statusOption) => (
                     <option key={statusOption} value={statusOption}>
                       {statusOption}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span className="input-label">Per page</span>
+                <select
+                  value={eventLimit}
+                  onChange={(event) => {
+                    setEventLimit(Number(event.target.value));
+                    setEventOffset(0);
+                  }}
+                >
+                  {[10, 25, 50, 100].map((size) => (
+                    <option key={size} value={size}>
+                      {size}
                     </option>
                   ))}
                 </select>
@@ -302,6 +342,28 @@ export function App() {
                   onChange={(event) => setEventSearch(event.target.value)}
                 />
               </div>
+            </div>
+
+            <div className="pagination-row">
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => setEventOffset(Math.max(0, eventOffset - eventLimit))}
+                disabled={eventOffset === 0}
+              >
+                Prev
+              </button>
+              <span className="page-meta">
+                {eventOffset + 1}–{Math.min(eventOffset + eventLimit, eventTotal)} of {eventTotal}
+              </span>
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => setEventOffset(Math.min(eventTotal, eventOffset + eventLimit))}
+                disabled={eventOffset + eventLimit >= eventTotal}
+              >
+                Next
+              </button>
             </div>
 
             <ul className="events-list">

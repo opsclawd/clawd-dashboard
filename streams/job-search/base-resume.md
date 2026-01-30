@@ -7,15 +7,22 @@ Senior Software Engineer / Full‑Stack Developer with 14+ years of web and appl
 ## TECHNICAL SKILLS
 **Languages:** JavaScript (10+ yrs), TypeScript, SQL (10+ yrs), PHP, Java
 **Frontend:** React, Next.js, Vue, Vuex, Redux, SCSS, Enzyme
-**Backend:** Node.js (6+ yrs), Laravel, CakePHP
-**Data:** PostgreSQL, MySQL, Neo4j, Firestore (NoSQL)
-**Cloud/DevOps:** AWS (Cognito), Docker, Kubernetes, GitHub Actions, GitLab CI, Azure CI/CD
+**Backend:** Node.js (6+ yrs), Laravel, CakePHP, Clean Architecture, DDD
+**Data:** PostgreSQL, MySQL, Neo4j, Firestore (NoSQL), Gel
+**Cloud/DevOps:** AWS (Cognito), Docker, Kubernetes, GitHub Actions, GitLab CI, Azure CI/CD, Azure DevOps
 **Tools:** Kafka, Jest, Selenium, CI/CD pipelines
 
 ## EXPERIENCE
 
+**Senior Full Stack Developer** — Alberta Energy Regulator (Calgary, AB)  
+*Sep 2024 – Present*  
+Regulatory Compliance Platform (energy sector)
+- Architected clean‑architecture backend for the compliance modernization project.
+- Built services with **TypeScript + Node + Gel** using **DDD** patterns.
+- Deployed microservices on **Kubernetes + Docker**; managed CI/CD in **Azure DevOps**.
+
 **Senior Full Stack Developer** — Intelliware Development (Toronto, ON)  
-*Jan 2023 – Present*  
+*Jan 2023 – Sep 2024*  
 Investment Management Platform (global client)
 - Built greenfield platform with **React + TypeScript + Java + PostgreSQL + Kafka**.
 - Implemented Kafka Connect pipelines for securities/positions data streaming.
@@ -24,9 +31,9 @@ Investment Management Platform (global client)
 - Managed cloud infrastructure with **AWS, Docker, Kubernetes**.
 - Delivered tools for positions, PnL, trading/order management, settlement, and compliance/risk.
 
-**Full Stack Developer** — Tundra Technical Solutions (Toronto, ON)  
+**Full Stack Developer** — Telus (Toronto, ON)  
 *Jan 2022 – Dec 2022*  
-Digital Office Assistant (national client)
+Digital Office Assistant
 - Built React/Next.js + Node application for booking rooms/desks and staff availability.
 - Implemented custom 3D floor map builder and interactive booking UI.
 - Integrated AI chatbot using Google Cloud Dialogflow.
@@ -80,6 +87,7 @@ Selected projects:
 **Bachelor’s Degree, Information Technology** — Carleton University, Ottawa, ON (2003–2007)
 
 ## PROJECT HIGHLIGHTS (OPTIONAL)
+- Regulatory compliance modernization platform (TypeScript/Node, DDD, Kubernetes, Azure DevOps).
 - Investment management platform (React/TS, Kafka, AWS) for global financial client.
 - COVID booking system (Vue 3, Node, Firestore, GCP) with roles/permissions and reporting.
 - Digital office assistant with 3D floor mapping and AI chatbot integration.

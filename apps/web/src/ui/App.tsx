@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import './App.css';
 
 type EventItem = {
   ts: string;
@@ -22,49 +23,103 @@ type ArtifactItem = {
   kind: string;
 };
 
-const columns: TaskItem['status'][] = [
-  'backlog',
-  'next',
-  'in_progress',
-  'blocked',
-  'done'
+const columns: TaskItem['status'][] = ['backlog', 'next', 'in_progress', 'blocked', 'done'];
+
+const statusLabels: Record<TaskItem['status'], string> = {
+  backlog: 'Backlog',
+  next: 'Next',
+  in_progress: 'In Progress',
+  blocked: 'Blocked',
+  done: 'Done'
+};
+
+const statusAccent: Record<TaskItem['status'], string> = {
+  backlog: '#c2c7da',
+  next: '#84a9ff',
+  in_progress: '#ffd966',
+  blocked: '#ffb5b5',
+  done: '#a3e635'
+};
+
+const streamOptions = [
+  { value: 'cannabis-on', label: 'Cannabis (ON)' },
+  { value: 'job-search', label: 'Job Search' },
+  { value: 'marketing', label: 'Marketing' }
 ];
+
+const eventTypeOptions = [
+  'research',
+  'plan',
+  'file_write',
+  'file_edit',
+  'command',
+  'browser',
+  'message',
+  'decision',
+  'reminder',
+  'task'
+];
+
+const eventStatusOptions = ['planned', 'in_progress', 'done', 'blocked'];
+
+const formatTimestamp = (value: string) => {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return parsed.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
 
 export function App() {
   const [items, setItems] = useState<EventItem[]>([]);
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [artifacts, setArtifacts] = useState<ArtifactItem[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [stream, setStream] = useState('');
-  const [type, setType] = useState('');
-  const [status, setStatus] = useState('');
+  const [eventStream, setEventStream] = useState('');
+  const [eventType, setEventType] = useState('');
+  const [eventStatus, setEventStatus] = useState('');
+  const [eventSearch, setEventSearch] = useState('');
 
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskStream, setNewTaskStream] = useState('job-search');
 
   useEffect(() => {
     const params = new URLSearchParams();
-    if (stream) params.set('stream', stream);
-    if (type) params.set('type', type);
-    if (status) params.set('status', status);
+    if (eventStream) params.set('stream', eventStream);
+    if (eventType) params.set('type', eventType);
+    if (eventStatus) params.set('status', eventStatus);
     const url = `http://127.0.0.1:5174/api/v1/events${params.toString() ? `?${params}` : ''}`;
     fetch(url)
       .then((r) => r.json())
-      .then((data) => setItems(data.items ?? []))
+      .then((data) => {
+        setItems(data.items ?? []);
+        setError(null);
+      })
       .catch((e) => setError(String(e)));
-  }, [stream, type, status]);
+  }, [eventStream, eventType, eventStatus]);
 
   useEffect(() => {
     fetch('http://127.0.0.1:5174/api/v1/tasks')
       .then((r) => r.json())
-      .then((data) => setTasks(data.items ?? []))
+      .then((data) => {
+        setTasks(data.items ?? []);
+        setError(null);
+      })
       .catch((e) => setError(String(e)));
   }, []);
 
   useEffect(() => {
     fetch('http://127.0.0.1:5174/api/v1/artifacts')
       .then((r) => r.json())
-      .then((data) => setArtifacts(data.items ?? []))
+      .then((data) => {
+        setArtifacts(data.items ?? []);
+        setError(null);
+      })
       .catch((e) => setError(String(e)));
   }, []);
 
@@ -86,122 +141,216 @@ export function App() {
     setNewTaskTitle('');
   };
 
+  const tasksByStatus = useMemo(() => {
+    const mapped = columns.reduce((acc, status) => {
+      acc[status] = [];
+      return acc;
+    }, {} as Record<TaskItem['status'], TaskItem[]>);
+    tasks.forEach((task) => {
+      mapped[task.status].push(task);
+    });
+    return mapped;
+  }, [tasks]);
+
+  const filteredEvents = useMemo(() => {
+    const query = eventSearch.trim().toLowerCase();
+    if (!query) {
+      return items;
+    }
+    return items.filter((ev) => ev.summary.toLowerCase().includes(query));
+  }, [items, eventSearch]);
+
   return (
-    <div style={{ fontFamily: 'system-ui', padding: 24 }}>
-      <h1 style={{ marginTop: 0 }}>Clawd Dashboard</h1>
-      <p style={{ marginTop: 0, color: '#555' }}>Local MVP — audit log viewer</p>
+    <div className="app-shell">
+      <div className="app-inner">
+        <header className="app-header">
+          <div>
+            <p className="eyebrow">Delivery cockpit</p>
+            <h1>Clawd dashboard</h1>
+            <p className="app-tagline">Audit log observer, task board, and artifact trail.</p>
+          </div>
+          <div className="header-meta">
+            <span className="meta-pill">Local MVP</span>
+            <span className="meta-caption">Updated just now</span>
+          </div>
+        </header>
 
-      {error && (
-        <pre style={{ background: '#fee', padding: 12, borderRadius: 8 }}>
-          {error}
-        </pre>
-      )}
+        {error && <div className="error-card">{error}</div>}
 
-      <section style={{ marginBottom: 24 }}>
-        <h2>Tasks</h2>
-        <div style={{ display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-          <input
-            placeholder="New task"
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-          />
-          <select value={newTaskStream} onChange={(e) => setNewTaskStream(e.target.value)}>
-            <option value="cannabis-on">Cannabis (ON)</option>
-            <option value="job-search">Job Search</option>
-            <option value="marketing">Marketing</option>
-          </select>
-          <button onClick={addTask}>Add task</button>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
-          {columns.map((col) => (
-            <div key={col} style={{ border: '1px solid #ddd', borderRadius: 8, padding: 8 }}>
-              <strong>{col}</strong>
-              <ul>
-                {tasks.filter((t) => t.status === col).map((t) => (
-                  <li key={t.id}>
-                    [{t.stream}] {t.title}
+        <main className="panels-grid">
+          <section className="panel tasks-panel">
+            <div className="panel-header">
+              <div>
+                <h2>Tasks board</h2>
+                <p className="panel-subtitle">Sort tasks into statuses and keep the backlog flowing.</p>
+              </div>
+              <span className="panel-count">{tasks.length} total</span>
+            </div>
+
+            <div className="task-controls">
+              <div className="input-compact">
+                <label className="input-label" htmlFor="new-task-title">
+                  New task
+                </label>
+                <input
+                  id="new-task-title"
+                  value={newTaskTitle}
+                  onChange={(event) => setNewTaskTitle(event.target.value)}
+                  placeholder="Describe the next action"
+                />
+              </div>
+              <label className="input-compact">
+                <span className="input-label">Stream</span>
+                <select value={newTaskStream} onChange={(event) => setNewTaskStream(event.target.value)}>
+                  {streamOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button type="button" className="primary" onClick={addTask}>
+                Add task
+              </button>
+            </div>
+
+            <div className="tasks-board">
+              {columns.map((column) => (
+                <div className="column-panel" key={column}>
+                  <div className="column-header" style={{ borderTopColor: statusAccent[column] }}>
+                    <div>
+                      <strong>{statusLabels[column]}</strong>
+                      <p className="column-count">{tasksByStatus[column].length} items</p>
+                    </div>
+                    <span className="status-badge" style={{ backgroundColor: statusAccent[column] }} />
+                  </div>
+                  <div className="column-body">
+                    {tasksByStatus[column].length === 0 ? (
+                      <p className="empty-state">No tasks yet.</p>
+                    ) : (
+                      <ul className="task-list">
+                        {tasksByStatus[column].map((task) => (
+                          <li key={task.id} className="task-card">
+                            <div className="task-title">{task.title}</div>
+                            <div className="task-meta">
+                              <span className="task-stream">[{task.stream}]</span>
+                              <span className="task-time">{formatTimestamp(task.ts)}</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="panel events-panel">
+            <div className="panel-header">
+              <div>
+                <h2>Recent events</h2>
+                <p className="panel-subtitle">Audit log entries streamed from Clawd.</p>
+              </div>
+              <span className="panel-count">{filteredEvents.length} matches</span>
+            </div>
+
+            <div className="filters-row">
+              <label>
+                <span className="input-label">Stream</span>
+                <select value={eventStream} onChange={(event) => setEventStream(event.target.value)}>
+                  <option value="">All</option>
+                  {streamOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span className="input-label">Type</span>
+                <select value={eventType} onChange={(event) => setEventType(event.target.value)}>
+                  <option value="">All</option>
+                  {eventTypeOptions.map((typeOption) => (
+                    <option key={typeOption} value={typeOption}>
+                      {typeOption}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span className="input-label">Status</span>
+                <select value={eventStatus} onChange={(event) => setEventStatus(event.target.value)}>
+                  <option value="">All</option>
+                  {eventStatusOptions.map((statusOption) => (
+                    <option key={statusOption} value={statusOption}>
+                      {statusOption}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="search-field">
+                <label className="input-label" htmlFor="event-search">
+                  Search
+                </label>
+                <input
+                  id="event-search"
+                  type="search"
+                  placeholder="Filter by summary"
+                  value={eventSearch}
+                  onChange={(event) => setEventSearch(event.target.value)}
+                />
+              </div>
+            </div>
+
+            <ul className="events-list">
+              {filteredEvents.length === 0 ? (
+                <li className="empty-state">No events match the current filters.</li>
+              ) : (
+                filteredEvents.map((ev, index) => (
+                  <li key={`${ev.ts}-${index}`} className="event-card">
+                    <div className="event-headline">
+                      <strong>{ev.stream}</strong>
+                      <span className="event-type">{ev.type}</span>
+                      {ev.status && <span className="event-status">{ev.status}</span>}
+                    </div>
+                    <p className="event-summary">{ev.summary}</p>
+                    <p className="event-ts">{formatTimestamp(ev.ts)}</p>
+                  </li>
+                ))
+              )}
+            </ul>
+          </section>
+
+          <section className="panel artifacts-panel">
+            <div className="panel-header">
+              <div>
+                <h2>Artifacts</h2>
+                <p className="panel-subtitle">Files generated or touched during this run.</p>
+              </div>
+              <span className="panel-count">{artifacts.length}</span>
+            </div>
+            {artifacts.length === 0 ? (
+              <p className="empty-state">No artifacts yet.</p>
+            ) : (
+              <ul className="artifact-list">
+                {artifacts.map((artifact) => (
+                  <li key={artifact.path}>
+                    <div className="artifact-path">{artifact.path}</div>
+                    <p className="artifact-meta">
+                      {artifact.kind} • {new Date(artifact.mtimeMs).toLocaleString()}
+                    </p>
                   </li>
                 ))}
               </ul>
-            </div>
-          ))}
-        </div>
-      </section>
+            )}
+          </section>
+        </main>
 
-      <section style={{ marginBottom: 24 }}>
-        <h2>Artifacts</h2>
-        {artifacts.length === 0 ? (
-          <p>No artifacts yet.</p>
-        ) : (
-          <ul>
-            {artifacts.map((a, idx) => (
-              <li key={idx}>
-                <code>{a.path}</code> <span style={{ color: '#777' }}>({a.kind})</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
-          <label>
-            Stream
-            <select value={stream} onChange={(e) => setStream(e.target.value)}>
-              <option value="">All</option>
-              <option value="cannabis-on">Cannabis (ON)</option>
-              <option value="job-search">Job Search</option>
-              <option value="marketing">Marketing</option>
-            </select>
-          </label>
-          <label>
-            Type
-            <select value={type} onChange={(e) => setType(e.target.value)}>
-              <option value="">All</option>
-              <option value="research">research</option>
-              <option value="plan">plan</option>
-              <option value="file_write">file_write</option>
-              <option value="file_edit">file_edit</option>
-              <option value="command">command</option>
-              <option value="browser">browser</option>
-              <option value="message">message</option>
-              <option value="decision">decision</option>
-              <option value="reminder">reminder</option>
-              <option value="task">task</option>
-            </select>
-          </label>
-          <label>
-            Status
-            <select value={status} onChange={(e) => setStatus(e.target.value)}>
-              <option value="">All</option>
-              <option value="planned">planned</option>
-              <option value="in_progress">in_progress</option>
-              <option value="done">done</option>
-              <option value="blocked">blocked</option>
-            </select>
-          </label>
-        </div>
-
-        <h2>Recent events</h2>
-        {items.length === 0 ? (
-          <p>No events yet.</p>
-        ) : (
-          <ul>
-            {items.map((ev, idx) => (
-              <li key={idx}>
-                <strong>{ev.stream}</strong> · {ev.type}
-                {ev.status ? ` · ${ev.status}` : ''} · {ev.summary}{' '}
-                <span style={{ color: '#777' }}>({ev.ts})</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <hr />
-      <p style={{ color: '#777' }}>
-        Next: git diffs view.
-      </p>
+        <footer className="app-footer">
+          <p>Next: git diffs view.</p>
+        </footer>
+      </div>
     </div>
   );
 }

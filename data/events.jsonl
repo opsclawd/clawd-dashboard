@@ -14,3 +14,8 @@
 {"ts":"2026-01-30T12:25:28-07:00","stream":"dashboard","type":"command","summary":"Committed fixes after user instruction (dev runner/CORS/dashboard stream)"}
 {"ts":"2026-01-30T12:29:52-07:00","stream":"dashboard","type":"file_edit","summary":"Added pagination controls for event stream"}
 {"ts":"2026-01-30T12:30:42-07:00","stream":"dashboard","type":"file_edit","summary":"Added pagination to event stream (limit/offset)"}
+{"ts":"2026-01-30T12:50:45-07:00","stream":"dashboard","type":"message","summary":"Sent Phase 2 spec email to [REDACTED_EMAIL]"}
+{"ts":"2026-01-30T12:50:45-07:00","stream":"dashboard","type":"file_write","summary":"Created Phase 2 spec at specs/PHASE-2.md"}
+{"ts":"2026-01-30T12:50:45-07:00","stream":"dashboard","type":"decision","summary":"Switched model to codex for implementation phase"}
+{"ts":"2026-01-30T13:01:30-07:00","stream":"dashboard","type":"plan","summary":"Started Phase 2 Milestone 2.1: audit logging foundation"}
+{"ts":"2026-01-30T13:02:05-07:00","stream":"dashboard","type":"file_write","summary":"Added scripts/run.mjs command wrapper"}

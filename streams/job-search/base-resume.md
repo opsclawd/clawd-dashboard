@@ -20,6 +20,7 @@ Regulatory Compliance Platform
 - Architected clean‑architecture backend for the compliance modernization project.
 - Built services with **TypeScript + Node + Gel** using **DDD** patterns.
 - Deployed microservices on **Kubernetes + Docker**; managed CI/CD in **Azure DevOps**.
+- Used **Kafka** for inter‑service communication.
 
 **Senior Full Stack Developer** — Intelliware Development (Toronto, ON)  
 *Jan 2023 – Sep 2024*  

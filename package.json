@@ -1,0 +1,17 @@
+{
+  "name": "clawd-dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @clawd/web & npm run dev -w @clawd/api",
+    "dev:web": "npm run dev -w @clawd/web",
+    "dev:api": "npm run dev -w @clawd/api",
+    "build": "npm run build -ws",
+    "typecheck": "npm run typecheck -ws",
+    "lint": "npm run lint -ws"
+  }
+}

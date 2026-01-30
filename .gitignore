@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.vite/
+.env
+.env.*
+
+# data
+logs/*.db
+logs/*.sqlite
+logs/*.sqlite3
+data/db.sqlite
+
+# artifacts can be large
+artifacts/exports/
+artifacts/screenshots/
+
+# private/one-off
+.trash/

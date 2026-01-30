@@ -11,6 +11,8 @@ import { EventService } from '../application/events';
 import { TaskService } from '../application/tasks';
 
 import { registerRoutes } from '../interface/register-routes';
+import { GitRepository } from '../infrastructure/git';
+import { GitService } from '../application/git';
 
 export type AppDeps = {
   rootDir?: string;
@@ -27,17 +29,19 @@ export const buildApp = async (deps: AppDeps = {}) => {
   const eventRepository = new EventRepository(EVENTS_PATH);
   const taskRepository = new TaskRepository(TASKS_PATH);
   const artifactRepository = new ArtifactRepository(ROOT, STREAMS_PATH);
+  const gitRepository = new GitRepository(ROOT);
 
   const eventService = new EventService(eventRepository);
   const taskService = new TaskService(taskRepository);
   const artifactService = new ArtifactService(artifactRepository);
+  const gitService = new GitService(gitRepository);
 
   await fastify.register(cors, {
     origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
     credentials: false
   });
 
-  registerRoutes(fastify, { eventService, taskService, artifactService });
+  registerRoutes(fastify, { eventService, taskService, artifactService, gitService });
 
   return fastify;
 };

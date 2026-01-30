@@ -110,6 +110,58 @@ const formatDetailValue = (value: unknown) => {
   return String(value);
 };
 
+type CommitPreview = {
+  sha: string;
+  message: string;
+  author: string;
+  ts: string;
+  files: string[];
+};
+
+const commitPreviews: CommitPreview[] = [
+  {
+    sha: 'c13a182',
+    message: 'Add saved filters and pagination polish',
+    author: 'Gary',
+    ts: '2026-01-30T16:20:00Z',
+    files: ['apps/web/src/ui/App.tsx', 'apps/web/src/ui/App.css']
+  },
+  {
+    sha: 'b4d3a8f',
+    message: 'Add event detail drawer experience',
+    author: 'Gary',
+    ts: '2026-01-29T18:10:00Z',
+    files: ['apps/web/src/ui/App.tsx']
+  },
+  {
+    sha: 'a8d7f11',
+    message: 'Sketch git review panel layout',
+    author: 'Gary',
+    ts: '2026-01-28T14:45:00Z',
+    files: ['specs/PHASE-2.md', 'apps/web/src/ui/App.css']
+  }
+];
+
+const commitDiffSnippets: Record<string, string> = {
+  c13a182: `diff --git a/apps/web/src/ui/App.tsx b/apps/web/src/ui/App.tsx
+@@ -320,6 +330,26 @@
+-              <div className="pagination-row">
+-                <!-- old controls -->
++              <div className="pagination-row">
++                <!-- new controls with page buttons -->
+               </div>
++// saved filters + persistence
+`,
+  b4d3a8f: `diff --git a/apps/web/src/ui/App.tsx b/apps/web/src/ui/App.tsx
+@@ -430,0 +450,32 @@
++// event drawer overlay + detail sections
+`,
+  a8d7f11: `diff --git a/apps/web/src/ui/App.tsx b/apps/web/src/ui/App.tsx
+@@ -530,0 +560,40 @@
++// git review panel + diff placeholder
+` 
+};
+
 export function App() {
   const [items, setItems] = useState<EventItem[]>([]);
   const [tasks, setTasks] = useState<TaskItem[]>([]);
@@ -126,6 +178,7 @@ export function App() {
   const [savedFilterName, setSavedFilterName] = useState('');
   const [activeSavedFilter, setActiveSavedFilter] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
+  const [selectedCommitSha, setSelectedCommitSha] = useState(commitPreviews[0].sha);
 
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskStream, setNewTaskStream] = useState('job-search');
@@ -277,6 +330,8 @@ export function App() {
   const goPrev = () => goToPage(Math.max(0, currentPage - 1));
   const goNext = () => goToPage(Math.min(totalPages - 1, currentPage + 1));
   const goLast = () => goToPage(totalPages - 1);
+  const activeCommit = commitPreviews.find((commit) => commit.sha === selectedCommitSha) ?? commitPreviews[0];
+  const activeDiff = commitDiffSnippets[selectedCommitSha] ?? 'Diff preview placeholder';
 
   return (
     <div className="app-shell">
@@ -623,6 +678,65 @@ export function App() {
                 ))}
               </ul>
             )}
+          </section>
+
+          <section className="panel git-panel">
+            <div className="panel-header">
+              <div>
+                <h2>Git review</h2>
+                <p className="panel-subtitle">Browse recent commits and docked diff placeholders.</p>
+              </div>
+              <span className="panel-count">{commitPreviews.length} entries</span>
+            </div>
+            <div className="git-panel-body">
+              <div className="commit-column">
+                <h3>Commits</h3>
+                <ul className="commit-list">
+                  {commitPreviews.map((commit) => (
+                    <li
+                      key={commit.sha}
+                      className={`commit-card ${selectedCommitSha === commit.sha ? 'is-active' : ''}`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setSelectedCommitSha(commit.sha)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          setSelectedCommitSha(commit.sha);
+                        }
+                      }}
+                    >
+                      <strong>{commit.message}</strong>
+                      <p className="commit-meta">
+                        {commit.author} • {formatTimestamp(commit.ts)} • {commit.files.length} files changed
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="diff-column">
+                <div className="diff-header">
+                  <p className="eyebrow">Diff viewer</p>
+                  <h3>{activeCommit.message}</h3>
+                  <p className="commit-meta">
+                    {activeCommit.author} • {formatTimestamp(activeCommit.ts)}
+                  </p>
+                  <div className="file-chip-row">
+                    {activeCommit.files.slice(0, 3).map((file) => (
+                      <span key={file} className="file-chip">
+                        {file}
+                      </span>
+                    ))}
+                    {activeCommit.files.length > 3 && (
+                      <span className="file-chip">+{activeCommit.files.length - 3} more</span>
+                    )}
+                  </div>
+                </div>
+                <div className="diff-placeholder">
+                  <pre>{activeDiff}</pre>
+                </div>
+              </div>
+            </div>
           </section>
         </main>
 

@@ -34,6 +34,7 @@ type ArtifactItem = {
   path: string;
   mtimeMs: number;
   kind: string;
+  lastCommitSha?: string;
 };
 
 type SavedFilter = {
@@ -703,6 +704,7 @@ export function App() {
                     <div className="artifact-path">{artifact.path}</div>
                     <p className="artifact-meta">
                       {artifact.kind} • {new Date(artifact.mtimeMs).toLocaleString()}
+                      {artifact.lastCommitSha ? ` • ${artifact.lastCommitSha.slice(0, 7)}` : ''}
                     </p>
                   </li>
                 ))}

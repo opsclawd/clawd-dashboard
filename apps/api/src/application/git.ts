@@ -21,4 +21,8 @@ export class GitService {
   getDiff(sha: string, relativePath?: string): string | null {
     return this.repository.getDiff(sha, relativePath);
   }
+
+  getLastCommitForPath(relativePath: string): string | null {
+    return this.repository.getLastCommitForPath(relativePath);
+  }
 }

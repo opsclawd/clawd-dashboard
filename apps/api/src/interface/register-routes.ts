@@ -23,7 +23,7 @@ export const registerRoutes = (
   registerHealthRoute(fastify);
   registerEventRoutes(fastify, deps.eventService);
   registerTaskRoutes(fastify, deps.taskService, deps.eventService);
-  registerArtifactRoutes(fastify, deps.artifactService);
+  registerArtifactRoutes(fastify, deps.artifactService, deps.gitService);
   registerGitRoutes(fastify, deps.gitService);
   registerSavedFilterRoutes(fastify, deps.savedFilterService);
 };

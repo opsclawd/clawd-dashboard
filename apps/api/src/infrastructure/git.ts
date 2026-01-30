@@ -36,6 +36,7 @@ export interface GitRepositoryPort {
   listCommits(params?: GitListCommitsParams): GitListCommitsResult;
   getCommit(sha: string): GitCommitDetail | null;
   getDiff(sha: string, relativePath?: string): string | null;
+  getLastCommitForPath(relativePath: string): string | null;
 }
 
 export class GitRepository implements GitRepositoryPort {
@@ -99,6 +100,18 @@ export class GitRepository implements GitRepositoryPort {
         args.push('--', relativePath);
       }
       return this.runGit(args).trimEnd();
+    } catch (error) {
+      if (error instanceof GitCommandError && error.exitCode === 128) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  getLastCommitForPath(relativePath: string) {
+    try {
+      const sha = this.runGit(['log', '-n', '1', '--pretty=format:%H', '--', relativePath]).trim();
+      return sha || null;
     } catch (error) {
       if (error instanceof GitCommandError && error.exitCode === 128) {
         return null;

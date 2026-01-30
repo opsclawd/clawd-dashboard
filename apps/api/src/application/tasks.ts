@@ -9,6 +9,7 @@ export type TaskFilters = {
 export type TaskRepositoryPort = {
   readAll: () => Task[];
   append: (task: Task) => void;
+  writeAll: (tasks: Task[]) => void;
 };
 
 type TaskSafeParseResult = ReturnType<typeof TaskSchema.safeParse>;
@@ -19,6 +20,10 @@ type TaskValidationError = Extract<TaskSafeParseResult, { success: false }>['err
 export type CreateTaskResult =
   | { success: true }
   | { success: false; error: TaskValidationError };
+
+export type UpdateTaskResult =
+  | { success: true; item: Task }
+  | { success: false; error: string };
 
 export class TaskService {
   private readonly repository: TaskRepositoryPort;
@@ -42,5 +47,17 @@ export class TaskService {
 
     this.repository.append(parsed.data);
     return { success: true };
+  }
+
+  updateTaskStatus(id: string, status: Task['status']): UpdateTaskResult {
+    const items = this.repository.readAll();
+    const idx = items.findIndex((t) => t.id === id);
+    if (idx === -1) return { success: false, error: `Task not found: ${id}` };
+
+    const updated: Task = { ...items[idx], status };
+    items[idx] = updated;
+    this.repository.writeAll(items);
+
+    return { success: true, item: updated };
   }
 }

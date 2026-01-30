@@ -20,7 +20,7 @@ export const registerRoutes = (
 ) => {
   registerHealthRoute(fastify);
   registerEventRoutes(fastify, deps.eventService);
-  registerTaskRoutes(fastify, deps.taskService);
+  registerTaskRoutes(fastify, deps.taskService, deps.eventService);
   registerArtifactRoutes(fastify, deps.artifactService);
   registerGitRoutes(fastify, deps.gitService);
 };

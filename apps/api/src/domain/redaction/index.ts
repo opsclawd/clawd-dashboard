@@ -2,7 +2,7 @@ const CODE_REGEX = /\b\d{6}\b/g;
 const PHONE_REGEX = /\b\d{10}\b/g;
 const EMAIL_REGEX = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 
-const redactString = (value: string) => {
+export const redactString = (value: string) => {
   let sat = value;
   sat = sat.replace(CODE_REGEX, '[REDACTED_CODE]');
   sat = sat.replace(PHONE_REGEX, '[REDACTED_PHONE]');

@@ -466,6 +466,13 @@ button.link-button {
   padding: 14px 16px;
   background: #fdfdfd;
   border: 1px solid #eceef4;
+  cursor: pointer;
+  transition: border 0.2s ease, transform 0.2s ease;
+}
+
+.event-card:hover {
+  border-color: #d1d5db;
+  transform: translateY(-1px);
 }
 
 .event-headline {
@@ -497,6 +504,132 @@ button.link-button {
   margin: 2px 0 0;
   font-size: 0.8rem;
   color: var(--muted);
+}
+
+.event-drawer-wrapper {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.event-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  pointer-events: auto;
+}
+
+.event-drawer {
+  position: relative;
+  width: min(420px, 100%);
+  max-width: 420px;
+  height: 100%;
+  background: #fff;
+  padding: 24px;
+  overflow-y: auto;
+  box-shadow: -30px 0 60px rgba(15, 23, 42, 0.35);
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.drawer-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-chip {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: #eef2ff;
+  color: #1c1c1c;
+}
+
+.detail-chip-accent {
+  background: #ffe6d9;
+}
+
+.detail-chip-muted {
+  background: #f4f4f5;
+}
+
+.drawer-section h4 {
+  margin: 0;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+}
+
+.drawer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-key {
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.detail-value {
+  font-family: 'JetBrains Mono', 'SFMono-Regular', monospace;
+  font-size: 0.85rem;
+}
+
+.drawer-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.drawer-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-pill {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e0e7ff;
+  color: #1e1b4b;
 }
 
 .artifact-list {

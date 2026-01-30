@@ -1,12 +1,25 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './App.css';
 
+type EventArtifact = {
+  kind: string;
+  value: string;
+};
+
 type EventItem = {
   ts: string;
   stream: string;
   type: string;
   summary: string;
   status?: string;
+  severity?: string;
+  correlationId?: string;
+  actor?: string;
+  details?: Record<string, unknown>;
+  tags?: string[];
+  artifacts?: EventArtifact[];
+  source?: { session?: string; messageId?: string };
+  id?: string;
 };
 
 type TaskItem = {
@@ -87,6 +100,16 @@ const formatTimestamp = (value: string) => {
   });
 };
 
+const formatDetailValue = (value: unknown) => {
+  if (value === null || value === undefined) {
+    return String(value);
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value, null, 2);
+  }
+  return String(value);
+};
+
 export function App() {
   const [items, setItems] = useState<EventItem[]>([]);
   const [tasks, setTasks] = useState<TaskItem[]>([]);
@@ -102,6 +125,7 @@ export function App() {
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
   const [savedFilterName, setSavedFilterName] = useState('');
   const [activeSavedFilter, setActiveSavedFilter] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
 
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskStream, setNewTaskStream] = useState('job-search');
@@ -551,7 +575,19 @@ export function App() {
                 <li className="empty-state">No events match the current filters.</li>
               ) : (
                 filteredEvents.map((ev, index) => (
-                  <li key={`${ev.ts}-${index}`} className="event-card">
+                  <li
+                    key={`${ev.ts}-${index}`}
+                    className="event-card"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedEvent(ev)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        setSelectedEvent(ev);
+                      }
+                    }}
+                  >
                     <div className="event-headline">
                       <strong>{ev.stream}</strong>
                       <span className="event-type">{ev.type}</span>
@@ -593,6 +629,83 @@ export function App() {
         <footer className="app-footer">
           <p>Next: git diffs view.</p>
         </footer>
+        {selectedEvent && (
+          <div className="event-drawer-wrapper" role="presentation">
+            <div className="event-drawer-backdrop" onClick={() => setSelectedEvent(null)} />
+            <aside className="event-drawer" role="dialog" aria-modal="true" aria-label="Event details">
+              <div className="drawer-header">
+                <div>
+                  <p className="eyebrow">{selectedEvent.stream}</p>
+                  <h3>{selectedEvent.summary}</h3>
+                  <p className="event-ts">{formatTimestamp(selectedEvent.ts)}</p>
+                </div>
+                <button type="button" className="ghost" onClick={() => setSelectedEvent(null)}>
+                  Close
+                </button>
+              </div>
+              <div className="drawer-chips">
+                <span className="detail-chip">{selectedEvent.type}</span>
+                {selectedEvent.status && <span className="detail-chip detail-chip-muted">{selectedEvent.status}</span>}
+                {selectedEvent.severity && (
+                  <span className="detail-chip detail-chip-accent">{selectedEvent.severity}</span>
+                )}
+                {selectedEvent.correlationId && (
+                  <span className="detail-chip detail-chip-accent">corr: {selectedEvent.correlationId}</span>
+                )}
+              </div>
+              {selectedEvent.details && (
+                <div className="drawer-section">
+                  <h4>Details</h4>
+                  <div className="detail-grid">
+                    {Object.entries(selectedEvent.details).map(([key, value]) => (
+                      <div key={key} className="detail-row">
+                        <span className="detail-key">{key}</span>
+                        <span className="detail-value">{formatDetailValue(value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {selectedEvent.artifacts && selectedEvent.artifacts.length > 0 && (
+                <div className="drawer-section">
+                  <h4>Related artifacts</h4>
+                  <ul className="drawer-list">
+                    {selectedEvent.artifacts.map((artifact) => (
+                      <li key={`${artifact.kind}-${artifact.value}`}>
+                        <span className="detail-key">{artifact.kind}</span>
+                        <span className="detail-value">{artifact.value}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {selectedEvent.tags && selectedEvent.tags.length > 0 && (
+                <div className="drawer-section">
+                  <h4>Tags</h4>
+                  <div className="tag-row">
+                    {selectedEvent.tags.map((tag) => (
+                      <span key={tag} className="tag-pill">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(selectedEvent.actor || selectedEvent.source) && (
+                <div className="drawer-section">
+                  <h4>Source</h4>
+                  {selectedEvent.actor && <p className="detail-value">Actor: {selectedEvent.actor}</p>}
+                  {selectedEvent.source?.session && (
+                    <p className="detail-value">Session: {selectedEvent.source.session}</p>
+                  )}
+                  {selectedEvent.source?.messageId && (
+                    <p className="detail-value">Msg ID: {selectedEvent.source.messageId}</p>
+                  )}
+                </div>
+              )}
+            </aside>
+          </div>
+        )}
       </div>
     </div>
   );

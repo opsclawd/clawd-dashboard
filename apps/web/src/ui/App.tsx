@@ -16,6 +16,12 @@ type TaskItem = {
   status: 'backlog' | 'next' | 'in_progress' | 'blocked' | 'done';
 };
 
+type ArtifactItem = {
+  path: string;
+  mtimeMs: number;
+  kind: string;
+};
+
 const columns: TaskItem['status'][] = [
   'backlog',
   'next',
@@ -27,6 +33,7 @@ const columns: TaskItem['status'][] = [
 export function App() {
   const [items, setItems] = useState<EventItem[]>([]);
   const [tasks, setTasks] = useState<TaskItem[]>([]);
+  const [artifacts, setArtifacts] = useState<ArtifactItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [stream, setStream] = useState('');
   const [type, setType] = useState('');
@@ -51,6 +58,13 @@ export function App() {
     fetch('http://127.0.0.1:5174/api/v1/tasks')
       .then((r) => r.json())
       .then((data) => setTasks(data.items ?? []))
+      .catch((e) => setError(String(e)));
+  }, []);
+
+  useEffect(() => {
+    fetch('http://127.0.0.1:5174/api/v1/artifacts')
+      .then((r) => r.json())
+      .then((data) => setArtifacts(data.items ?? []))
       .catch((e) => setError(String(e)));
   }, []);
 
@@ -114,6 +128,21 @@ export function App() {
         </div>
       </section>
 
+      <section style={{ marginBottom: 24 }}>
+        <h2>Artifacts</h2>
+        {artifacts.length === 0 ? (
+          <p>No artifacts yet.</p>
+        ) : (
+          <ul>
+            {artifacts.map((a, idx) => (
+              <li key={idx}>
+                <code>{a.path}</code> <span style={{ color: '#777' }}>({a.kind})</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       <section>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
           <label>
@@ -171,7 +200,7 @@ export function App() {
 
       <hr />
       <p style={{ color: '#777' }}>
-        Next: artifacts list, git diffs.
+        Next: git diffs view.
       </p>
     </div>
   );

@@ -5,8 +5,10 @@ import { z } from 'zod';
 
 const app = Fastify({ logger: true });
 
-const EVENTS_PATH = path.resolve(process.cwd(), '../../data/events.jsonl');
-const TASKS_PATH = path.resolve(process.cwd(), '../../data/tasks.jsonl');
+const ROOT = path.resolve(process.cwd(), '../../');
+const EVENTS_PATH = path.join(ROOT, 'data/events.jsonl');
+const TASKS_PATH = path.join(ROOT, 'data/tasks.jsonl');
+const STREAMS_PATH = path.join(ROOT, 'streams');
 
 const EventSchema = z.object({
   ts: z.string(),
@@ -61,6 +63,22 @@ function readLines(filePath: string) {
   return items;
 }
 
+function walk(dir: string, base = dir): Array<{ path: string; mtimeMs: number }> {
+  if (!fs.existsSync(dir)) return [];
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const out: Array<{ path: string; mtimeMs: number }> = [];
+  for (const e of entries) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) {
+      out.push(...walk(full, base));
+    } else {
+      const stat = fs.statSync(full);
+      out.push({ path: path.relative(base, full), mtimeMs: stat.mtimeMs });
+    }
+  }
+  return out;
+}
+
 app.get('/health', async () => ({ ok: true }));
 
 app.get('/api/v1/events', async (req) => {
@@ -97,6 +115,22 @@ app.post('/api/v1/tasks', async (req, res) => {
   if (!parsed.success) return res.status(400).send({ error: parsed.error.flatten() });
   fs.appendFileSync(TASKS_PATH, JSON.stringify(parsed.data) + '\n', 'utf-8');
   return { ok: true };
+});
+
+app.get('/api/v1/artifacts', async () => {
+  const streams = walk(STREAMS_PATH, ROOT).map((x) => ({ ...x, kind: 'stream' }));
+  const extras = ['job-search.md', 'job-search.md', 'README.md']
+    .map((p) => path.join(ROOT, p))
+    .filter((p) => fs.existsSync(p))
+    .map((p) => ({
+      path: path.relative(ROOT, p),
+      mtimeMs: fs.statSync(p).mtimeMs,
+      kind: 'file'
+    }));
+  const items = [...streams, ...extras]
+    .sort((a, b) => b.mtimeMs - a.mtimeMs)
+    .slice(0, 200);
+  return { items };
 });
 
 const port = Number(process.env.PORT ?? 5174);

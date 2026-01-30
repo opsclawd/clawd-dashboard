@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "resume-gen": {
+      "version": "1.0.2",
+      "installedAt": 1769809044788
+    },
+    "resume-tailor": {
+      "version": "1.0.0",
+      "installedAt": 1769809345112
+    },
+    "resume-cv-builder": {
+      "version": "1.0.0",
+      "installedAt": 1769809489929
+    }
+  }
+}

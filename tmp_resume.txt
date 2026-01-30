@@ -1,0 +1,140 @@
+Gary Poon Tip
+Experienced Javascript developer, seeking Front End or Full Stack opportunities
+Calgary, AB gpoontip@gmail.com
+613-697-2597
+• 14 years of web/application development experience
+• 6 years experience with modern front end Javascript frameworks (Vue and React)
+• 6 years experience working with Node
+• 10+ years Javascript
+
+Work Experience
+Senior Full Stack Developer
+Intelliware Development-Toronto, ON
+January 2023 to Present
+Investment Management Platform for global client
+• React, Typescript, Java, PostgreSQL, Kafka
+• Greenfield project
+• Kafka connect for streaming securities and positions data
+• User authentication with AWS cognito
+• CI/CD with Github workflows
+• Managed cloud infrasructure using AWS, docker and kubernetes
+• Automated testing and monitoring processes
+• Tools to monitor positions and PnL
+• Tools for trading and order manageement
+• Tools for managing securities borrowing and financing
+• Tools for settlement and post trade processing
+• Tools to manage compliance and risk
+
+Full Stack Developer
+Tundra Technical Solutions-Toronto, ON
+January 2022 to December 2022
+Digital Office Assistant app for national client
+• React, NextJS, Node, Neo4J
+• Built digital workplace office assistant for employees to book meetings, social gatherings, view availability of
+rooms/desks
+• Custom floor map builder where custom 3d assets and amenities can be placed
+• Interactive floor map where rooms/desks can be booked, view what's available or in use, view any floor
+amenities
+• AI chatbot with google cloud dialogflow
+
+Front End Developer
+CAMBRIAN CREDIT UNION-Calgary, AB
+May 2021 to December 2021
+Online Banking web app for national client
+• React, Redux, Enzyme
+
+• Built online banking portal for clients to manage their bank accounts, send e-transfers etc
+• Ci/CD with gitlab
+• 85% front end test coverage
+
+Front End Developer
+eSolutions, Inc.-Calgary, AB
+November 2020 to May 2021
+Mississauga.ca web application
+• Vue, Typescript
+• Public facing city website for citizens to apply for permits, pay parking tickets etc
+• Collaborate with Back End team to architect REST API
+• 80% Unit Test coverage
+• Lead code reviews
+• Continuous Integration/Delivery pipeline with Azure
+• Vue, Vuex, Scss
+
+Founder/Owner
+Poon Tip Consulting Corp-Calgary, AB
+2018 to 2021
+Royal Bank
+Component Library for banking client (2021)
+• Vue, Selenium
+• Developed a custom component library for use across the corporation's digital platforms
+• Selenium tests for all components
+• Part of a team of 2 front end developers
+==============
+PMO Gobal Services
+Covid Booking Management (2020) https://bookings.pmogs.com/
+• Vue 3, Typescript, Jest, Node, Firestore (nosql), Google Cloud
+• Calendar booking software to setup events, invite users, log results
+• Manage Roles & Permissions across multiple projects and admins
+• Custom dashboard and reporting
+==============
+Used Tires Direct
+Used tire dealership (2019) http://usedtiresdirect.com
+• Vue.js, Quasar Framework, Node, Firebase, Google Cloud Platform, PWA, Git version control
+• Used tires inventory management system
+• Track inventory, sales, statistics, projections for retail tire business
+
+Senior Web Developer
+Fieldsafe Solutions-Calgary, AB
+March 2020 to November 2020
+• Vue.js, Laravel, PHP, MySQL
+• Lead multiple teams of up to 8 developers at a time.
+• Project lead on a number of initiatives and upgrades for the saas platform
+• Involved in the conversion from legacy php codebase to Laravel
+• Lead on projects involving Vue.js and building an api backend in Laravel
+• Involved in release management
+• Lead code reviews
+• Communicate with clients on a weekly basis
+• Front End and Back End Unit Tests
+
+Lead Web Developer
+Godzspeed Communications-Ottawa, ON June
+2015 to February 2020
+Worked as web lead as part of digital marketing firm
+• React, Node, PHP
+• Managed team of up to 6 developers
+• Managed Web projects
+• Created Digital Media Strategies for clients
+
+Full Stack Developer
+FarmLead.com-Ottawa, ON November
+2016 to November 2017
+• Worked on Front End upgrades for FarmLead.com
+• Worked on Back End upgrades for FarmLead.com built on CakePHP
+• PHP, MySQL, CakePHP Framework, JavaScript, HTML5, CSS3, Git version control
+• Marketplace for farmers to connect with buyers to sell overstock
+
+Senior Web Developer
+Canada Post-Ottawa, ON April
+2012 to May 2015
+• Managed local Intranet accessed by all Canada Post employees
+• Developed updates and introduced new features to Intranet Intrapost (Company wide Intranet)
+• PHP, MySQL, HTML, CSS, JavaScript
+• Back-end and Front-end feature additions and upgrades
+
+Education
+Graduate Certificate Program in Interactive Media and Design
+Algonquin College - Ottawa, ON September
+2007 to April 2008
+
+Bachelor's Degree in Information Technology
+Carleton University - Ottawa, ON September
+2003 to April 2007
+
+Skills
+• Javascript (10+ years)
+• Vue (3 years)
+• React (6 years)
+• Sql (10+ years)
+• Nosql (4 years)
+• Node.Js (6 years)
+
+

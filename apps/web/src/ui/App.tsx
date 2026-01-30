@@ -45,7 +45,8 @@ type SavedFilter = {
   query: string;
 };
 
-const SAVED_FILTERS_KEY = 'clawd.savedEventFilters';
+const SAVED_FILTERS_KEY = 'clawd.savedEventFilters'; // legacy localStorage fallback
+const SAVED_FILTERS_API = 'http://127.0.0.1:5174/api/v1/saved-filters';
 
 const columns: TaskItem['status'][] = ['backlog', 'next', 'in_progress', 'blocked', 'done'];
 
@@ -204,18 +205,35 @@ export function App() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    try {
-      const stored = window.localStorage.getItem(SAVED_FILTERS_KEY);
-      if (stored) {
-        setSavedFilters(JSON.parse(stored));
+
+    // Prefer server-side persistence (data/saved-filters.json). Fall back to localStorage.
+    (async () => {
+      try {
+        const res = await fetch(SAVED_FILTERS_API);
+        if (res.ok) {
+          const data = (await res.json()) as { items?: SavedFilter[] };
+          if (Array.isArray(data.items)) {
+            setSavedFilters(data.items);
+            return;
+          }
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore corrupted storage
-    }
+
+      try {
+        const stored = window.localStorage.getItem(SAVED_FILTERS_KEY);
+        if (stored) setSavedFilters(JSON.parse(stored));
+      } catch {
+        // ignore corrupted storage
+      }
+    })();
   }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    // Keep local fallback
     window.localStorage.setItem(SAVED_FILTERS_KEY, JSON.stringify(savedFilters));
   }, [savedFilters]);
 
@@ -259,7 +277,7 @@ export function App() {
 
   const resetActiveFilter = () => setActiveSavedFilter(null);
 
-  const handleSaveFilter = () => {
+  const handleSaveFilter = async () => {
     const name = savedFilterName.trim();
     if (!name) return;
     const newFilter: SavedFilter = {
@@ -270,6 +288,18 @@ export function App() {
       limit: eventLimit,
       query: eventSearch
     };
+
+    // Persist server-side (falls back to local state if API unavailable)
+    try {
+      await fetch(SAVED_FILTERS_API, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(newFilter)
+      });
+    } catch {
+      // ignore
+    }
+
     setSavedFilters((prev) => [newFilter, ...prev.filter((filter) => filter.name.toLowerCase() !== name.toLowerCase())]);
     setSavedFilterName('');
     setActiveSavedFilter(name);

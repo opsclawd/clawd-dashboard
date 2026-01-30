@@ -7,6 +7,7 @@ import { registerArtifactRoutes } from './routes/artifacts';
 import { registerEventRoutes } from './routes/events';
 import { registerGitRoutes } from './routes/git';
 import { registerHealthRoute } from './routes/health';
+import { registerSavedFilterRoutes } from './routes/saved-filters';
 import { registerTaskRoutes } from './routes/tasks';
 
 export const registerRoutes = (
@@ -16,6 +17,7 @@ export const registerRoutes = (
     taskService: TaskService;
     artifactService: ArtifactService;
     gitService: GitService;
+    savedFilterService: import('../application/saved-filters').SavedFilterService;
   }
 ) => {
   registerHealthRoute(fastify);
@@ -23,4 +25,5 @@ export const registerRoutes = (
   registerTaskRoutes(fastify, deps.taskService, deps.eventService);
   registerArtifactRoutes(fastify, deps.artifactService);
   registerGitRoutes(fastify, deps.gitService);
+  registerSavedFilterRoutes(fastify, deps.savedFilterService);
 };

@@ -42,6 +42,7 @@ const statusAccent: Record<TaskItem['status'], string> = {
 };
 
 const streamOptions = [
+  { value: 'dashboard', label: 'Dashboard' },
   { value: 'cannabis-on', label: 'Cannabis (ON)' },
   { value: 'job-search', label: 'Job Search' },
   { value: 'marketing', label: 'Marketing' }

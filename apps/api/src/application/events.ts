@@ -1,4 +1,5 @@
-import { Event, EventSchema, redactObject, redactString } from '../domain';
+import { EventSchema, redactObject, redactString } from '../domain';
+import type { Event } from '../domain';
 
 export type EventFilters = {
   stream?: string;
@@ -21,7 +22,11 @@ export type CreateEventResult =
   | { success: false; error: EventValidationError };
 
 export class EventService {
-  constructor(private readonly repository: EventRepositoryPort) {}
+  private readonly repository: EventRepositoryPort;
+
+  constructor(repository: EventRepositoryPort) {
+    this.repository = repository;
+  }
 
   listEvents(filters: EventFilters) {
     let items = this.repository.readAll();

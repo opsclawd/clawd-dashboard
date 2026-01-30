@@ -5,7 +5,11 @@ export type ArtifactRepositoryPort = {
 };
 
 export class ArtifactService {
-  constructor(private readonly repository: ArtifactRepositoryPort) {}
+  private readonly repository: ArtifactRepositoryPort;
+
+  constructor(repository: ArtifactRepositoryPort) {
+    this.repository = repository;
+  }
 
   listArtifacts() {
     const items = [...this.repository.fetchAll()];

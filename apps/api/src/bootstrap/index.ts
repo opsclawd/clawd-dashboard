@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import cors from '@fastify/cors';
 import path from 'node:path';
 import { ArtifactRepository } from '../infrastructure/repositories/artifact-repository';
 import { EventRepository } from '../infrastructure/repositories/event-repository';
@@ -23,6 +24,11 @@ export const startApi = async () => {
   const eventService = new EventService(eventRepository);
   const taskService = new TaskService(taskRepository);
   const artifactService = new ArtifactService(artifactRepository);
+
+  await fastify.register(cors, {
+    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    credentials: false
+  });
 
   registerRoutes(fastify, { eventService, taskService, artifactService });
 

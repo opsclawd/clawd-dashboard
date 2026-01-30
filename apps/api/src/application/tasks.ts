@@ -1,4 +1,5 @@
-import { Task, TaskSchema } from '../domain';
+import { TaskSchema } from '../domain';
+import type { Task } from '../domain';
 
 export type TaskFilters = {
   stream?: string;
@@ -20,7 +21,11 @@ export type CreateTaskResult =
   | { success: false; error: TaskValidationError };
 
 export class TaskService {
-  constructor(private readonly repository: TaskRepositoryPort) {}
+  private readonly repository: TaskRepositoryPort;
+
+  constructor(repository: TaskRepositoryPort) {
+    this.repository = repository;
+  }
 
   listTasks(filters: TaskFilters) {
     let items = this.repository.readAll();

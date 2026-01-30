@@ -1,9 +1,13 @@
-import { Event } from '../../domain';
-import { EventRepositoryPort } from '../../application/events';
+import type { Event } from '../../domain';
+import type { EventRepositoryPort } from '../../application/events';
 import { appendJsonLine, readJsonLines } from '../file-system';
 
 export class EventRepository implements EventRepositoryPort {
-  constructor(private readonly filePath: string) {}
+  private readonly filePath: string;
+
+  constructor(filePath: string) {
+    this.filePath = filePath;
+  }
 
   readAll() {
     return readJsonLines<Event>(this.filePath);

@@ -1,9 +1,13 @@
-import { Task } from '../../domain';
-import { TaskRepositoryPort } from '../../application/tasks';
+import type { Task } from '../../domain';
+import type { TaskRepositoryPort } from '../../application/tasks';
 import { appendJsonLine, readJsonLines } from '../file-system';
 
 export class TaskRepository implements TaskRepositoryPort {
-  constructor(private readonly filePath: string) {}
+  private readonly filePath: string;
+
+  constructor(filePath: string) {
+    this.filePath = filePath;
+  }
 
   readAll() {
     return readJsonLines<Task>(this.filePath);

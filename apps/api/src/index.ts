@@ -1,4 +1,4 @@
-import { startApi } from './bootstrap';
+import { startApi } from './bootstrap/index.ts';
 
 startApi().catch((error) => {
   console.error('❌ Failed to start API', error);

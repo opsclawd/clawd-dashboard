@@ -1,3 +1,13 @@
-{"ts":"2026-01-30T16:48:20.741Z","stream":"job-search","type":"plan","summary":"Scaffolded dashboard MVP (API + web)"}
-{"ts":"2026-01-30T17:45:41.749Z","stream":"job-search","type":"plan","summary":"Added tasks API + tasks board UI"}
-{"ts":"2026-01-30T17:55:37.147Z","stream":"job-search","type":"plan","summary":"Added artifacts endpoint and list UI"}
+{"ts": "2026-01-30T16:48:20.741Z", "stream": "dashboard", "type": "plan", "summary": "Scaffolded dashboard MVP (API + web)"}
+{"ts": "2026-01-30T17:45:41.749Z", "stream": "dashboard", "type": "plan", "summary": "Added tasks API + tasks board UI"}
+{"ts": "2026-01-30T17:55:37.147Z", "stream": "dashboard", "type": "plan", "summary": "Added artifacts endpoint and list UI"}
+{"ts": "2026-01-30T16:30:00.000Z", "stream": "dashboard", "type": "plan", "summary": "Planned dashboard architecture (separate backend + Vite frontend)"}
+{"ts": "2026-01-30T16:40:00.000Z", "stream": "dashboard", "type": "command", "summary": "Created opsclawd GitHub repo and pushed scaffold"}
+{"ts": "2026-01-30T16:48:00.000Z", "stream": "dashboard", "type": "file_write", "summary": "Scaffolded API + web MVP structure"}
+{"ts": "2026-01-30T17:20:00.000Z", "stream": "dashboard", "type": "file_edit", "summary": "Added events API with redaction + filters"}
+{"ts": "2026-01-30T17:45:00.000Z", "stream": "dashboard", "type": "file_edit", "summary": "Added tasks API + tasks board UI"}
+{"ts": "2026-01-30T17:55:00.000Z", "stream": "dashboard", "type": "file_edit", "summary": "Added artifacts endpoint and list UI"}
+{"ts": "2026-01-30T18:00:00.000Z", "stream": "dashboard", "type": "decision", "summary": "Switched API dev runner to tsx and NodeNext resolution"}
+{"ts": "2026-01-30T18:05:00.000Z", "stream": "dashboard", "type": "file_edit", "summary": "Refactored API into Clean Architecture layers"}
+{"ts": "2026-01-30T18:10:00.000Z", "stream": "dashboard", "type": "command", "summary": "Installed VS Code and opened repo for live review"}
+{"ts": "2026-01-30T18:14:00.000Z", "stream": "dashboard", "type": "file_edit", "summary": "Fixed CORS + import cleanup so UI can fetch API"}

@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { ArtifactSchema, Artifact } from '../value-objects/artifact';
+import { ArtifactSchema } from '../value-objects/artifact';
+import type { Artifact } from '../value-objects/artifact';
 import { StreamSchema } from '../value-objects/streams';
 
 export const EventSchema = z.object({

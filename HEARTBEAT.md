@@ -1,4 +1,5 @@
 # HEARTBEAT.md
 
-# Keep this file empty (or with only comments) to skip heartbeat API calls.
-# Add tasks below when you want the agent to check something periodically.
+# Reminders
+- Ensure any resume/job-search changes are logged in the job-search events stream.
+- Ensure actions are logged so changes are auditable.

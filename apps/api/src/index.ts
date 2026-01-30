@@ -5,7 +5,8 @@ import { z } from 'zod';
 
 const app = Fastify({ logger: true });
 
-const DATA_PATH = path.resolve(process.cwd(), '../../data/events.jsonl');
+const EVENTS_PATH = path.resolve(process.cwd(), '../../data/events.jsonl');
+const TASKS_PATH = path.resolve(process.cwd(), '../../data/tasks.jsonl');
 
 const EventSchema = z.object({
   ts: z.string(),
@@ -17,6 +18,14 @@ const EventSchema = z.object({
   artifacts: z.array(z.object({ kind: z.string(), value: z.string() })).optional(),
   tags: z.array(z.string()).optional(),
   source: z.object({ session: z.string().optional(), messageId: z.string().optional() }).optional()
+});
+
+const TaskSchema = z.object({
+  id: z.string(),
+  ts: z.string(),
+  stream: z.enum(['cannabis-on', 'job-search', 'marketing']),
+  title: z.string(),
+  status: z.enum(['backlog', 'next', 'in_progress', 'blocked', 'done'])
 });
 
 function redact(value: unknown) {
@@ -38,9 +47,9 @@ function redactObject(obj: Record<string, unknown>) {
   return out;
 }
 
-function readEvents() {
-  if (!fs.existsSync(DATA_PATH)) return [] as any[];
-  const lines = fs.readFileSync(DATA_PATH, 'utf-8').split('\n').filter(Boolean);
+function readLines(filePath: string) {
+  if (!fs.existsSync(filePath)) return [] as any[];
+  const lines = fs.readFileSync(filePath, 'utf-8').split('\n').filter(Boolean);
   const items = [] as any[];
   for (const line of lines) {
     try {
@@ -56,7 +65,7 @@ app.get('/health', async () => ({ ok: true }));
 
 app.get('/api/v1/events', async (req) => {
   const q = req.query as { stream?: string; type?: string; status?: string };
-  let items = readEvents();
+  let items = readLines(EVENTS_PATH);
   if (q.stream) items = items.filter((e) => e.stream === q.stream);
   if (q.type) items = items.filter((e) => e.type === q.type);
   if (q.status) items = items.filter((e) => e.status === q.status);
@@ -71,7 +80,22 @@ app.post('/api/v1/events', async (req, res) => {
     summary: redact(parsed.data.summary),
     details: parsed.data.details ? redactObject(parsed.data.details) : undefined
   };
-  fs.appendFileSync(DATA_PATH, JSON.stringify(redacted) + '\n', 'utf-8');
+  fs.appendFileSync(EVENTS_PATH, JSON.stringify(redacted) + '\n', 'utf-8');
+  return { ok: true };
+});
+
+app.get('/api/v1/tasks', async (req) => {
+  const q = req.query as { stream?: string; status?: string };
+  let items = readLines(TASKS_PATH);
+  if (q.stream) items = items.filter((t) => t.stream === q.stream);
+  if (q.status) items = items.filter((t) => t.status === q.status);
+  return { items: items.slice(-500).reverse() };
+});
+
+app.post('/api/v1/tasks', async (req, res) => {
+  const parsed = TaskSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).send({ error: parsed.error.flatten() });
+  fs.appendFileSync(TASKS_PATH, JSON.stringify(parsed.data) + '\n', 'utf-8');
   return { ok: true };
 });
 

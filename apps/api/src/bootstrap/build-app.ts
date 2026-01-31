@@ -1,6 +1,8 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import staticPlugin from '@fastify/static';
 import path from 'node:path';
+import fs from 'node:fs';
 
 import { ArtifactRepository } from '../infrastructure/repositories/artifact-repository';
 import { EventRepository } from '../infrastructure/repositories/event-repository';
@@ -53,6 +55,14 @@ export const buildApp = async (deps: AppDeps = {}) => {
     origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
     credentials: false
   });
+
+  const webRoot = path.join(ROOT, 'apps', 'web', 'dist');
+  if (fs.existsSync(webRoot)) {
+    await fastify.register(staticPlugin, {
+      root: webRoot,
+      prefix: '/'
+    });
+  }
 
   const token = process.env.AUTH_TOKEN;
   if (token) {

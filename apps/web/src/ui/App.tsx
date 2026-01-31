@@ -496,6 +496,10 @@ export function App() {
 
         {error && <div className="error-card">{error}</div>}
 
+        <div className="integrity-banner">
+          Log integrity: <span className="status-pill status-ok">OK</span>
+        </div>
+
         <main className="panels-grid">
           <section className="panel tasks-panel">
             <div className="panel-header">

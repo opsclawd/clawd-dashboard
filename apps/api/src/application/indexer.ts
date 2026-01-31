@@ -115,8 +115,9 @@ export class IndexService {
     for (let index = start; index < lines.length; index += 1) {
       try {
         const data = JSON.parse(lines[index]) as Record<string, unknown>;
+        const id = String(data.id ?? `line-${index}`);
         stmt.run({
-          id: String(data.id ?? ''),
+          id,
           ts: String(data.ts ?? ''),
           stream: String(data.stream ?? ''),
           type: String(data.type ?? ''),

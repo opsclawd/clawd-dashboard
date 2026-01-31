@@ -513,6 +513,15 @@ export function App() {
           >
             Verify log
           </button>
+          <a className="ghost" href="http://127.0.0.1:5174/api/v1/streams/cannabis/checklist/export">
+            Export checklist
+          </a>
+          <a className="ghost" href="http://127.0.0.1:5174/api/v1/streams/job-search/applications/export">
+            Export applications
+          </a>
+          <a className="ghost" href="http://127.0.0.1:5174/api/v1/streams/marketing/campaigns/export">
+            Export campaigns
+          </a>
         </div>
 
         <main className="panels-grid">

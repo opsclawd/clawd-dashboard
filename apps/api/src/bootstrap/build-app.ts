@@ -15,6 +15,7 @@ import { SavedFilterService } from '../application/saved-filters';
 import { StreamService } from '../application/streams';
 import { DigestService } from '../application/digest';
 import { ReminderService } from '../application/reminders';
+import { DigestSubscriptionService } from '../application/digest-subscriptions';
 
 import { registerRoutes } from '../interface/register-routes';
 import { GitRepository } from '../infrastructure/git';
@@ -50,6 +51,7 @@ export const buildApp = async (deps: AppDeps = {}) => {
   const savedFilterService = new SavedFilterService(savedFilterRepository);
   const digestService = new DigestService(eventRepository, taskRepository);
   const reminderService = new ReminderService(eventService, taskService);
+  const digestSubscriptionService = new DigestSubscriptionService();
 
   await fastify.register(cors, {
     origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
@@ -85,7 +87,8 @@ export const buildApp = async (deps: AppDeps = {}) => {
     indexService,
     streamService,
     digestService,
-    reminderService
+    reminderService,
+    digestSubscriptionService
   });
 
   return fastify;

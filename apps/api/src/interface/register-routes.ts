@@ -10,6 +10,7 @@ import { registerHealthRoute } from './routes/health';
 import { registerIndexerRoutes } from './routes/indexer';
 import { registerSavedFilterRoutes } from './routes/saved-filters';
 import { registerAutomationRoutes } from './routes/automation';
+import { registerDigestSubscriptionRoutes } from './routes/digest-subscriptions';
 import { registerIntegrityRoutes } from './routes/integrity';
 import { registerStreamRoutes } from './routes/streams';
 import { registerTaskRoutes } from './routes/tasks';
@@ -26,6 +27,7 @@ export const registerRoutes = (
     streamService: import('../application/streams').StreamService;
     digestService: import('../application/digest').DigestService;
     reminderService: import('../application/reminders').ReminderService;
+    digestSubscriptionService: import('../application/digest-subscriptions').DigestSubscriptionService;
   }
 ) => {
   registerHealthRoute(fastify);
@@ -37,5 +39,6 @@ export const registerRoutes = (
   registerIndexerRoutes(fastify, deps.indexService);
   registerStreamRoutes(fastify, deps.streamService);
   registerAutomationRoutes(fastify, deps.digestService, deps.reminderService);
+  registerDigestSubscriptionRoutes(fastify, deps.digestSubscriptionService);
   registerIntegrityRoutes(fastify, process.cwd());
 };

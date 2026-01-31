@@ -21,6 +21,10 @@ describe('StreamService', () => {
     expect(svc.listJobApplications().length).toBe(1);
     expect(svc.listMarketingCampaigns().length).toBe(1);
 
+    expect(svc.reportCannabisChecklistMarkdown()).toContain('Cannabis (ON) checklist report');
+    expect(svc.reportJobApplicationsMarkdown()).toContain('Job search report');
+    expect(svc.reportMarketingCampaignsMarkdown()).toContain('Marketing experiments report');
+
     process.chdir(cwd);
     fs.rmSync(root, { recursive: true, force: true });
   });

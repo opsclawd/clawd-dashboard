@@ -15,6 +15,10 @@ export const registerStreamRoutes = (fastify: FastifyInstance, service: StreamSe
     const csv = ['id,title,status,notes', ...items.map((i) => `${i.id},${i.title},${i.status},${i.notes ?? ''}`)].join('\n');
     return csv;
   });
+  fastify.get('/api/v1/streams/cannabis/checklist/report.md', async (req, res) => {
+    res.header('content-type', 'text/markdown');
+    return service.reportCannabisChecklistMarkdown();
+  });
 
   // Job applications
   fastify.get('/api/v1/streams/job-search/applications', async () => ({ items: service.listJobApplications() }));
@@ -29,6 +33,10 @@ export const registerStreamRoutes = (fastify: FastifyInstance, service: StreamSe
     const csv = ['id,company,role,link,status,followUpDate,resume', ...items.map((i) => `${i.id},${i.company},${i.role},${i.link ?? ''},${i.status},${i.followUpDate ?? ''},${i.resume ?? ''}`)].join('\n');
     return csv;
   });
+  fastify.get('/api/v1/streams/job-search/applications/report.md', async (req, res) => {
+    res.header('content-type', 'text/markdown');
+    return service.reportJobApplicationsMarkdown();
+  });
 
   // Marketing campaigns
   fastify.get('/api/v1/streams/marketing/campaigns', async () => ({ items: service.listMarketingCampaigns() }));
@@ -42,5 +50,9 @@ export const registerStreamRoutes = (fastify: FastifyInstance, service: StreamSe
     res.header('content-type', 'text/csv');
     const csv = ['id,name,status,hypothesis,metric,result,date', ...items.map((i) => `${i.id},${i.name},${i.status},${i.hypothesis ?? ''},${i.metric ?? ''},${i.result ?? ''},${i.date ?? ''}`)].join('\n');
     return csv;
+  });
+  fastify.get('/api/v1/streams/marketing/campaigns/report.md', async (req, res) => {
+    res.header('content-type', 'text/markdown');
+    return service.reportMarketingCampaignsMarkdown();
   });
 };

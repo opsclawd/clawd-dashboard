@@ -615,13 +615,22 @@ export function App() {
             Verify log
           </button>
           <a className="ghost" href="http://127.0.0.1:5174/api/v1/streams/cannabis/checklist/export">
-            Export checklist
+            Checklist CSV
+          </a>
+          <a className="ghost" href="http://127.0.0.1:5174/api/v1/streams/cannabis/checklist/report.md">
+            Checklist MD
           </a>
           <a className="ghost" href="http://127.0.0.1:5174/api/v1/streams/job-search/applications/export">
-            Export applications
+            Applications CSV
+          </a>
+          <a className="ghost" href="http://127.0.0.1:5174/api/v1/streams/job-search/applications/report.md">
+            Applications MD
           </a>
           <a className="ghost" href="http://127.0.0.1:5174/api/v1/streams/marketing/campaigns/export">
-            Export campaigns
+            Campaigns CSV
+          </a>
+          <a className="ghost" href="http://127.0.0.1:5174/api/v1/streams/marketing/campaigns/report.md">
+            Campaigns MD
           </a>
         </div>
 

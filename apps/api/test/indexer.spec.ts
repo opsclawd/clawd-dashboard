@@ -16,11 +16,23 @@ describe('IndexService', () => {
     const svc = new IndexService(root);
     const res = svc.rebuild();
     expect(res.events).toBe(1);
+
+    const status = svc.status();
+    expect(status.lag.events).toBe(0);
+    expect(status.dbCounts.events).toBe(1);
     const reader = new IndexReader(root);
     const list = reader.listEvents({ stream: 'dashboard', type: undefined, status: undefined, q: undefined, limit: 10, offset: 0 });
     expect(list.items.length).toBeGreaterThan(0);
     const filtered = reader.listEvents({ stream: 'dashboard', type: 'plan', status: undefined, q: 'hello', limit: 10, offset: 0 });
     expect(filtered.items.length).toBeGreaterThan(0);
+
+    // Introduce lag.
+    fs.appendFileSync(
+      eventsPath,
+      JSON.stringify({ id: 'e2', ts: new Date().toISOString(), stream: 'dashboard', type: 'plan', summary: 'later' }) + '\n'
+    );
+    const lagging = svc.status();
+    expect(lagging.lag.events).toBeGreaterThan(0);
 
     fs.rmSync(root, { recursive: true, force: true });
   });

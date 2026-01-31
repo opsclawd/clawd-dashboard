@@ -37,6 +37,15 @@ type ArtifactItem = {
   lastCommitSha?: string;
 };
 
+type IndexStatus = {
+  offsets: { events: number; tasks: number };
+  lineCounts: { events: number; tasks: number };
+  lag: { events: number; tasks: number };
+  dbCounts: { events: number; tasks: number };
+  mismatch: { events: boolean; tasks: boolean };
+  lastIndexed: { eventsTs?: string; tasksTs?: string };
+};
+
 type ChecklistItem = {
   id: string;
   title: string;
@@ -253,6 +262,8 @@ export function App() {
   const [integrityStatus, setIntegrityStatus] = useState<'ok' | 'fail' | 'unknown'>('unknown');
   const [integrityMessage, setIntegrityMessage] = useState('');
 
+  const [indexStatus, setIndexStatus] = useState<IndexStatus | null>(null);
+
   useEffect(() => {
     const params = new URLSearchParams();
     if (eventStream) params.set('stream', eventStream);
@@ -357,6 +368,13 @@ export function App() {
       .catch(() => {
         setIntegrityStatus('unknown');
       });
+
+    fetch('http://127.0.0.1:5174/api/v1/index/status')
+      .then((r) => r.json())
+      .then((data) => {
+        setIndexStatus(data.status ?? null);
+      })
+      .catch(() => undefined);
   }, []);
 
   const addTask = async () => {
@@ -638,6 +656,66 @@ export function App() {
             }}
           >
             Verify log
+          </button>
+
+          <span className="meta-caption">
+            Index:{' '}
+            {indexStatus ? (
+              <>
+                {indexStatus.lag.events === 0 && indexStatus.lag.tasks === 0 ? 'OK' : 'Lagging'} • ev {indexStatus.dbCounts.events}/
+                {indexStatus.lineCounts.events} • tasks {indexStatus.dbCounts.tasks}/{indexStatus.lineCounts.tasks}
+                {(indexStatus.mismatch.events || indexStatus.mismatch.tasks) && ' • mismatch'}
+              </>
+            ) : (
+              'Unknown'
+            )}
+          </span>
+          <button
+            type="button"
+            className="ghost"
+            onClick={async () => {
+              try {
+                const res = await fetch('http://127.0.0.1:5174/api/v1/index/status');
+                const data = await res.json();
+                setIndexStatus(data.status ?? null);
+              } catch {
+                // ignore
+              }
+            }}
+          >
+            Refresh index
+          </button>
+          <button
+            type="button"
+            className="ghost"
+            onClick={async () => {
+              try {
+                await fetch('http://127.0.0.1:5174/api/v1/index/tick', { method: 'POST' });
+                const res = await fetch('http://127.0.0.1:5174/api/v1/index/status');
+                const data = await res.json();
+                setIndexStatus(data.status ?? null);
+              } catch {
+                // ignore
+              }
+            }}
+          >
+            Tick index
+          </button>
+          <button
+            type="button"
+            className="ghost"
+            onClick={async () => {
+              try {
+                await fetch('http://127.0.0.1:5174/api/v1/index/rebuild', { method: 'POST' });
+                const res = await fetch('http://127.0.0.1:5174/api/v1/index/status');
+                const data = await res.json();
+                setIndexStatus(data.status ?? null);
+              } catch {
+                // ignore
+              }
+            }}
+          >
+            Rebuild index
           </button>
           <a className="ghost" href="http://127.0.0.1:5174/api/v1/streams/cannabis/checklist/export">
             Checklist CSV

@@ -12,6 +12,15 @@ export type IndexResult = {
   tasks: number;
 };
 
+export type IndexStatus = {
+  offsets: OffsetState;
+  lineCounts: OffsetState;
+  lag: OffsetState;
+  dbCounts: OffsetState;
+  mismatch: { events: boolean; tasks: boolean };
+  lastIndexed: { eventsTs?: string; tasksTs?: string };
+};
+
 export class IndexService {
   private db: Database.Database;
   private offsetPath: string;
@@ -35,6 +44,45 @@ export class IndexService {
 
   tick(): IndexResult {
     return this.ingestPartial();
+  }
+
+  status(): IndexStatus {
+    const offsets = this.loadOffsets();
+    const lineCounts = {
+      events: this.readLines(this.eventsPath).length,
+      tasks: this.readLines(this.tasksPath).length
+    };
+    const lag = {
+      events: Math.max(0, lineCounts.events - offsets.events),
+      tasks: Math.max(0, lineCounts.tasks - offsets.tasks)
+    };
+
+    const dbEvents = this.db.prepare('SELECT COUNT(*) as c, MAX(ts) as maxTs FROM events').get() as {
+      c: number;
+      maxTs: string | null;
+    };
+    const dbTasks = this.db.prepare('SELECT COUNT(*) as c, MAX(ts) as maxTs FROM tasks').get() as {
+      c: number;
+      maxTs: string | null;
+    };
+
+    const dbCounts = { events: Number(dbEvents.c ?? 0), tasks: Number(dbTasks.c ?? 0) };
+    const mismatch = {
+      events: dbCounts.events !== lineCounts.events,
+      tasks: dbCounts.tasks !== lineCounts.tasks
+    };
+
+    return {
+      offsets,
+      lineCounts,
+      lag,
+      dbCounts,
+      mismatch,
+      lastIndexed: {
+        eventsTs: dbEvents.maxTs ?? undefined,
+        tasksTs: dbTasks.maxTs ?? undefined
+      }
+    };
   }
 
   private ensureSchema() {

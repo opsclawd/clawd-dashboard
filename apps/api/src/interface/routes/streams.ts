@@ -12,7 +12,7 @@ export const registerStreamRoutes = (fastify: FastifyInstance, service: StreamSe
   fastify.get('/api/v1/streams/cannabis/checklist/export', async (req, res) => {
     const items = service.listCannabisChecklist();
     res.header('content-type', 'text/csv');
-    const csv = ['id,title,status,notes,archivedAt', ...items.map((i) => `${i.id},${i.title},${i.status},${i.notes ?? ''},${i.archivedAt ?? ''}`)].join('\n');
+    const csv = ['id,title,status,notes,taskId,archivedAt', ...items.map((i) => `${i.id},${i.title},${i.status},${i.notes ?? ''},${i.taskId ?? ''},${i.archivedAt ?? ''}`)].join('\n');
     return csv;
   });
   fastify.get('/api/v1/streams/cannabis/checklist/report.md', async (req, res) => {

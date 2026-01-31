@@ -51,6 +51,7 @@ type ChecklistItem = {
   title: string;
   status: 'todo' | 'in_progress' | 'done';
   notes?: string;
+  taskId?: string;
   archivedAt?: string;
 };
 
@@ -262,6 +263,9 @@ export function App() {
 
   const [newChecklistTitle, setNewChecklistTitle] = useState('');
   const [newChecklistNotes, setNewChecklistNotes] = useState('');
+  const [newChecklistTaskId, setNewChecklistTaskId] = useState('');
+  const [showArchivedChecklist, setShowArchivedChecklist] = useState(false);
+  const [showDoneChecklist, setShowDoneChecklist] = useState(false);
 
   const [newAppCompany, setNewAppCompany] = useState('');
   const [newAppRole, setNewAppRole] = useState('');
@@ -468,12 +472,14 @@ export function App() {
       id: crypto.randomUUID(),
       title: newChecklistTitle.trim(),
       status: 'todo',
-      notes: newChecklistNotes.trim() ? newChecklistNotes.trim() : undefined
+      notes: newChecklistNotes.trim() ? newChecklistNotes.trim() : undefined,
+      taskId: newChecklistTaskId.trim() ? newChecklistTaskId.trim() : undefined
     };
     const updated = [next, ...cannabisChecklist];
     setCannabisChecklist(updated);
     setNewChecklistTitle('');
     setNewChecklistNotes('');
+    setNewChecklistTaskId('');
     await persistCannabisChecklist(updated);
   };
 
@@ -690,6 +696,25 @@ export function App() {
 
     return { todayKey, dueSoonKey, overdue, dueSoon, none };
   }, [jobAppsActive]);
+
+  const checklistActive = useMemo(() => {
+    const base = showArchivedChecklist ? cannabisChecklist : cannabisChecklist.filter((item) => !item.archivedAt);
+    return showDoneChecklist ? base : base.filter((item) => item.status !== 'done');
+  }, [cannabisChecklist, showArchivedChecklist, showDoneChecklist]);
+
+  const checklistBuckets = useMemo(() => {
+    const todo: ChecklistItem[] = [];
+    const inProgress: ChecklistItem[] = [];
+    const done: ChecklistItem[] = [];
+
+    checklistActive.forEach((item) => {
+      if (item.status === 'todo') todo.push(item);
+      else if (item.status === 'in_progress') inProgress.push(item);
+      else done.push(item);
+    });
+
+    return { todo, inProgress, done };
+  }, [checklistActive]);
 
   const filteredEvents = useMemo(() => {
     const query = eventSearch.trim().toLowerCase();
@@ -953,44 +978,211 @@ export function App() {
                     value={newChecklistTitle}
                     onChange={(event) => setNewChecklistTitle(event.target.value)}
                   />
-                  <input
-                    placeholder="Notes"
-                    value={newChecklistNotes}
-                    onChange={(event) => setNewChecklistNotes(event.target.value)}
-                  />
+                  <input placeholder="Notes" value={newChecklistNotes} onChange={(event) => setNewChecklistNotes(event.target.value)} />
+                  <select value={newChecklistTaskId} onChange={(event) => setNewChecklistTaskId(event.target.value)}>
+                    <option value="">No task</option>
+                    {tasks.map((task) => (
+                      <option key={task.id} value={task.id}>
+                        {task.title}
+                      </option>
+                    ))}
+                  </select>
                   <button type="button" className="ghost" onClick={addChecklistItem}>
                     Add
                   </button>
                 </div>
-                {cannabisChecklist.length === 0 ? (
+
+                <div className="followup-summary">
+                  <div className="followup-bucket">
+                    <strong>Todo</strong>
+                    <span>{checklistBuckets.todo.length}</span>
+                  </div>
+                  <div className="followup-bucket">
+                    <strong>In progress</strong>
+                    <span>{checklistBuckets.inProgress.length}</span>
+                  </div>
+                  <div className="followup-bucket">
+                    <strong>Done</strong>
+                    <span>{checklistBuckets.done.length}</span>
+                  </div>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={showDoneChecklist}
+                      onChange={(event) => setShowDoneChecklist(event.target.checked)}
+                    />
+                    <span>show done</span>
+                  </label>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={showArchivedChecklist}
+                      onChange={(event) => setShowArchivedChecklist(event.target.checked)}
+                    />
+                    <span>show archived</span>
+                  </label>
+                </div>
+
+                {checklistActive.length === 0 ? (
                   <p className="empty-state">No checklist items yet.</p>
                 ) : (
-                  <ul className="stream-list">
-                    {cannabisChecklist.map((item) => (
-                      <li key={item.id} className="checklist-row">
-                        <input
-                          value={item.title}
-                          onChange={(event) => updateChecklistItem(item.id, { title: event.target.value })}
-                        />
-                        <select
-                          value={item.status}
-                          onChange={(event) => updateChecklistItem(item.id, { status: event.target.value as ChecklistItem['status'] })}
-                        >
-                          <option value="todo">todo</option>
-                          <option value="in_progress">in_progress</option>
-                          <option value="done">done</option>
-                        </select>
-                        <input
-                          value={item.notes ?? ''}
-                          placeholder="notes"
-                          onChange={(event) => updateChecklistItem(item.id, { notes: event.target.value || undefined })}
-                        />
-                        <button type="button" className="ghost" onClick={() => deleteChecklistItem(item.id)}>
-                          Delete
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <div className="followup-section">
+                      <h4>Todo</h4>
+                      {checklistBuckets.todo.length === 0 ? (
+                        <p className="empty-state">None.</p>
+                      ) : (
+                        <ul className="stream-list">
+                          {checklistBuckets.todo.map((item) => (
+                            <li key={item.id} className="checklist-row">
+                              <input value={item.title} onChange={(event) => updateChecklistItem(item.id, { title: event.target.value })} />
+                              <select
+                                value={item.status}
+                                onChange={(event) => updateChecklistItem(item.id, { status: event.target.value as ChecklistItem['status'] })}
+                              >
+                                <option value="todo">todo</option>
+                                <option value="in_progress">in_progress</option>
+                                <option value="done">done</option>
+                              </select>
+                              <input
+                                value={item.notes ?? ''}
+                                placeholder="notes"
+                                onChange={(event) => updateChecklistItem(item.id, { notes: event.target.value || undefined })}
+                              />
+                              <select
+                                value={item.taskId ?? ''}
+                                onChange={(event) => updateChecklistItem(item.id, { taskId: event.target.value || undefined })}
+                              >
+                                <option value="">No task</option>
+                                {tasks.map((task) => (
+                                  <option key={task.id} value={task.id}>
+                                    {task.title}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="row-actions">
+                                <button
+                                  type="button"
+                                  className="ghost"
+                                  onClick={() => updateChecklistItem(item.id, { archivedAt: item.archivedAt ? undefined : new Date().toISOString() })}
+                                >
+                                  {item.archivedAt ? 'Unarchive' : 'Archive'}
+                                </button>
+                                <button type="button" className="ghost" onClick={() => deleteChecklistItem(item.id)}>
+                                  Delete
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="followup-section">
+                      <h4>In progress</h4>
+                      {checklistBuckets.inProgress.length === 0 ? (
+                        <p className="empty-state">None.</p>
+                      ) : (
+                        <ul className="stream-list">
+                          {checklistBuckets.inProgress.map((item) => (
+                            <li key={item.id} className="checklist-row">
+                              <input value={item.title} onChange={(event) => updateChecklistItem(item.id, { title: event.target.value })} />
+                              <select
+                                value={item.status}
+                                onChange={(event) => updateChecklistItem(item.id, { status: event.target.value as ChecklistItem['status'] })}
+                              >
+                                <option value="todo">todo</option>
+                                <option value="in_progress">in_progress</option>
+                                <option value="done">done</option>
+                              </select>
+                              <input
+                                value={item.notes ?? ''}
+                                placeholder="notes"
+                                onChange={(event) => updateChecklistItem(item.id, { notes: event.target.value || undefined })}
+                              />
+                              <select
+                                value={item.taskId ?? ''}
+                                onChange={(event) => updateChecklistItem(item.id, { taskId: event.target.value || undefined })}
+                              >
+                                <option value="">No task</option>
+                                {tasks.map((task) => (
+                                  <option key={task.id} value={task.id}>
+                                    {task.title}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="row-actions">
+                                <button
+                                  type="button"
+                                  className="ghost"
+                                  onClick={() => updateChecklistItem(item.id, { status: 'done' })}
+                                >
+                                  Mark done
+                                </button>
+                                <button
+                                  type="button"
+                                  className="ghost"
+                                  onClick={() => updateChecklistItem(item.id, { archivedAt: item.archivedAt ? undefined : new Date().toISOString() })}
+                                >
+                                  {item.archivedAt ? 'Unarchive' : 'Archive'}
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    {showDoneChecklist && (
+                      <div className="followup-section">
+                        <h4>Done</h4>
+                        {checklistBuckets.done.length === 0 ? (
+                          <p className="empty-state">None.</p>
+                        ) : (
+                          <ul className="stream-list">
+                            {checklistBuckets.done.map((item) => (
+                              <li key={item.id} className="checklist-row">
+                                <input value={item.title} onChange={(event) => updateChecklistItem(item.id, { title: event.target.value })} />
+                                <select
+                                  value={item.status}
+                                  onChange={(event) => updateChecklistItem(item.id, { status: event.target.value as ChecklistItem['status'] })}
+                                >
+                                  <option value="todo">todo</option>
+                                  <option value="in_progress">in_progress</option>
+                                  <option value="done">done</option>
+                                </select>
+                                <input
+                                  value={item.notes ?? ''}
+                                  placeholder="notes"
+                                  onChange={(event) => updateChecklistItem(item.id, { notes: event.target.value || undefined })}
+                                />
+                                <select
+                                  value={item.taskId ?? ''}
+                                  onChange={(event) => updateChecklistItem(item.id, { taskId: event.target.value || undefined })}
+                                >
+                                  <option value="">No task</option>
+                                  {tasks.map((task) => (
+                                    <option key={task.id} value={task.id}>
+                                      {task.title}
+                                    </option>
+                                  ))}
+                                </select>
+                                <div className="row-actions">
+                                  <button
+                                    type="button"
+                                    className="ghost"
+                                    onClick={() => updateChecklistItem(item.id, { archivedAt: item.archivedAt ? undefined : new Date().toISOString() })}
+                                  >
+                                    {item.archivedAt ? 'Unarchive' : 'Archive'}
+                                  </button>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 

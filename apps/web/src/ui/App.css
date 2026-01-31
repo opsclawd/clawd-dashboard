@@ -370,6 +370,12 @@ button.primary:hover {
   align-items: center;
 }
 
+.row-actions {
+  display: inline-flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
 .job-row {
   display: grid;
   grid-template-columns: 1fr 1fr 1.2fr 0.8fr 1fr 0.9fr 1.2fr auto;

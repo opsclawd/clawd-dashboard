@@ -6,6 +6,7 @@ export type ChecklistItem = {
   title: string;
   status: 'todo' | 'in_progress' | 'done';
   notes?: string;
+  taskId?: string;
   archivedAt?: string;
 };
 
@@ -98,8 +99,11 @@ export class StreamService {
         lines.push('- (none)');
       } else {
         sectionItems.forEach((item) => {
-          const noteSuffix = item.notes ? ` — ${item.notes}` : '';
-          lines.push(`- ${item.title}${noteSuffix}`);
+          const meta: string[] = [];
+          if (item.taskId) meta.push(`task: ${item.taskId}`);
+          if (item.notes) meta.push(item.notes);
+          const suffix = meta.length ? ` — ${meta.join(' | ')}` : '';
+          lines.push(`- ${item.title}${suffix}`);
         });
       }
       lines.push('');

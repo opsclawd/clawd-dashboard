@@ -283,6 +283,9 @@ export function App() {
   const [newCampaignMetric, setNewCampaignMetric] = useState('');
   const [newCampaignResult, setNewCampaignResult] = useState('');
   const [newCampaignDate, setNewCampaignDate] = useState('');
+  const [newCampaignTaskId, setNewCampaignTaskId] = useState('');
+  const [newCampaignNextStep, setNewCampaignNextStep] = useState('');
+  const [showArchivedCampaigns, setShowArchivedCampaigns] = useState(false);
   const [integrityStatus, setIntegrityStatus] = useState<'ok' | 'fail' | 'unknown'>('unknown');
   const [integrityMessage, setIntegrityMessage] = useState('');
 
@@ -608,7 +611,9 @@ export function App() {
       hypothesis: newCampaignHypothesis.trim() ? newCampaignHypothesis.trim() : undefined,
       metric: newCampaignMetric.trim() ? newCampaignMetric.trim() : undefined,
       result: newCampaignResult.trim() ? newCampaignResult.trim() : undefined,
-      date: newCampaignDate.trim() ? newCampaignDate.trim() : undefined
+      date: newCampaignDate.trim() ? newCampaignDate.trim() : undefined,
+      taskId: newCampaignTaskId.trim() ? newCampaignTaskId.trim() : undefined,
+      nextStep: newCampaignNextStep.trim() ? newCampaignNextStep.trim() : undefined
     };
     const updated = [next, ...marketingCampaigns];
     setMarketingCampaigns(updated);
@@ -618,6 +623,8 @@ export function App() {
     setNewCampaignMetric('');
     setNewCampaignResult('');
     setNewCampaignDate('');
+    setNewCampaignTaskId('');
+    setNewCampaignNextStep('');
     await persistMarketingCampaigns(updated);
   };
 
@@ -715,6 +722,29 @@ export function App() {
 
     return { todo, inProgress, done };
   }, [checklistActive]);
+
+  const campaignsActive = useMemo(
+    () => (showArchivedCampaigns ? marketingCampaigns : marketingCampaigns.filter((c) => !c.archivedAt)),
+    [marketingCampaigns, showArchivedCampaigns]
+  );
+
+  const campaignBuckets = useMemo(() => {
+    const draft: Campaign[] = [];
+    const published: Campaign[] = [];
+    const measured: Campaign[] = [];
+    const needsMeasurement: Campaign[] = [];
+
+    campaignsActive.forEach((campaign) => {
+      if (campaign.status === 'draft') draft.push(campaign);
+      if (campaign.status === 'published') published.push(campaign);
+      if (campaign.status === 'measured') measured.push(campaign);
+      if (campaign.status === 'published' && (!campaign.metric || !campaign.result)) {
+        needsMeasurement.push(campaign);
+      }
+    });
+
+    return { draft, published, measured, needsMeasurement };
+  }, [campaignsActive]);
 
   const filteredEvents = useMemo(() => {
     const query = eventSearch.trim().toLowerCase();
@@ -1288,85 +1318,282 @@ export function App() {
               <div className="stream-card">
                 <h3>Marketing campaigns</h3>
                 <div className="stream-form">
-                  <input
-                    placeholder="Campaign"
-                    value={newCampaignName}
-                    onChange={(event) => setNewCampaignName(event.target.value)}
-                  />
-                  <select
-                    value={newCampaignStatus}
-                    onChange={(event) => setNewCampaignStatus(event.target.value as Campaign['status'])}
-                  >
+                  <input placeholder="Campaign" value={newCampaignName} onChange={(event) => setNewCampaignName(event.target.value)} />
+                  <select value={newCampaignStatus} onChange={(event) => setNewCampaignStatus(event.target.value as Campaign['status'])}>
                     <option value="idea">idea</option>
                     <option value="draft">draft</option>
                     <option value="published">published</option>
                     <option value="measured">measured</option>
                   </select>
                   <input
+                    placeholder="Next step"
+                    value={newCampaignNextStep}
+                    onChange={(event) => setNewCampaignNextStep(event.target.value)}
+                  />
+                  <select value={newCampaignTaskId} onChange={(event) => setNewCampaignTaskId(event.target.value)}>
+                    <option value="">No task</option>
+                    {tasks.map((task) => (
+                      <option key={task.id} value={task.id}>
+                        {task.title}
+                      </option>
+                    ))}
+                  </select>
+                  <input
                     placeholder="Hypothesis"
                     value={newCampaignHypothesis}
                     onChange={(event) => setNewCampaignHypothesis(event.target.value)}
                   />
-                  <input
-                    placeholder="Metric"
-                    value={newCampaignMetric}
-                    onChange={(event) => setNewCampaignMetric(event.target.value)}
-                  />
-                  <input
-                    placeholder="Result"
-                    value={newCampaignResult}
-                    onChange={(event) => setNewCampaignResult(event.target.value)}
-                  />
+                  <input placeholder="Metric" value={newCampaignMetric} onChange={(event) => setNewCampaignMetric(event.target.value)} />
+                  <input placeholder="Result" value={newCampaignResult} onChange={(event) => setNewCampaignResult(event.target.value)} />
                   <input type="date" value={newCampaignDate} onChange={(event) => setNewCampaignDate(event.target.value)} />
                   <button type="button" className="ghost" onClick={addCampaign}>
                     Add
                   </button>
                 </div>
-                {marketingCampaigns.length === 0 ? (
+
+                <div className="followup-summary">
+                  <div className="followup-bucket">
+                    <strong>Draft</strong>
+                    <span>{campaignBuckets.draft.length}</span>
+                  </div>
+                  <div className="followup-bucket">
+                    <strong>Published</strong>
+                    <span>{campaignBuckets.published.length}</span>
+                  </div>
+                  <div className="followup-bucket">
+                    <strong>Needs measurement</strong>
+                    <span>{campaignBuckets.needsMeasurement.length}</span>
+                  </div>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={showArchivedCampaigns}
+                      onChange={(event) => setShowArchivedCampaigns(event.target.checked)}
+                    />
+                    <span>show archived</span>
+                  </label>
+                </div>
+
+                {campaignsActive.length === 0 ? (
                   <p className="empty-state">No campaigns yet.</p>
                 ) : (
-                  <ul className="stream-list">
-                    {marketingCampaigns.map((campaign) => (
-                      <li key={campaign.id} className="campaign-row">
-                        <input
-                          value={campaign.name}
-                          onChange={(event) => updateCampaign(campaign.id, { name: event.target.value })}
-                        />
-                        <select
-                          value={campaign.status}
-                          onChange={(event) => updateCampaign(campaign.id, { status: event.target.value as Campaign['status'] })}
-                        >
-                          <option value="idea">idea</option>
-                          <option value="draft">draft</option>
-                          <option value="published">published</option>
-                          <option value="measured">measured</option>
-                        </select>
-                        <input
-                          value={campaign.hypothesis ?? ''}
-                          placeholder="hypothesis"
-                          onChange={(event) => updateCampaign(campaign.id, { hypothesis: event.target.value || undefined })}
-                        />
-                        <input
-                          value={campaign.metric ?? ''}
-                          placeholder="metric"
-                          onChange={(event) => updateCampaign(campaign.id, { metric: event.target.value || undefined })}
-                        />
-                        <input
-                          value={campaign.result ?? ''}
-                          placeholder="result"
-                          onChange={(event) => updateCampaign(campaign.id, { result: event.target.value || undefined })}
-                        />
-                        <input
-                          type="date"
-                          value={campaign.date ?? ''}
-                          onChange={(event) => updateCampaign(campaign.id, { date: event.target.value || undefined })}
-                        />
-                        <button type="button" className="ghost" onClick={() => deleteCampaign(campaign.id)}>
-                          Delete
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <div className="followup-section">
+                      <h4>Needs measurement</h4>
+                      {campaignBuckets.needsMeasurement.length === 0 ? (
+                        <p className="empty-state">None.</p>
+                      ) : (
+                        <ul className="stream-list">
+                          {campaignBuckets.needsMeasurement.map((campaign) => (
+                            <li key={campaign.id} className="campaign-row">
+                              <input value={campaign.name} onChange={(event) => updateCampaign(campaign.id, { name: event.target.value })} />
+                              <select
+                                value={campaign.status}
+                                onChange={(event) => updateCampaign(campaign.id, { status: event.target.value as Campaign['status'] })}
+                              >
+                                <option value="idea">idea</option>
+                                <option value="draft">draft</option>
+                                <option value="published">published</option>
+                                <option value="measured">measured</option>
+                              </select>
+                              <input
+                                value={campaign.nextStep ?? ''}
+                                placeholder="next"
+                                onChange={(event) => updateCampaign(campaign.id, { nextStep: event.target.value || undefined })}
+                              />
+                              <select
+                                value={campaign.taskId ?? ''}
+                                onChange={(event) => updateCampaign(campaign.id, { taskId: event.target.value || undefined })}
+                              >
+                                <option value="">No task</option>
+                                {tasks.map((task) => (
+                                  <option key={task.id} value={task.id}>
+                                    {task.title}
+                                  </option>
+                                ))}
+                              </select>
+                              <input
+                                value={campaign.hypothesis ?? ''}
+                                placeholder="hypothesis"
+                                onChange={(event) => updateCampaign(campaign.id, { hypothesis: event.target.value || undefined })}
+                              />
+                              <input
+                                value={campaign.metric ?? ''}
+                                placeholder="metric"
+                                onChange={(event) => updateCampaign(campaign.id, { metric: event.target.value || undefined })}
+                              />
+                              <input
+                                value={campaign.result ?? ''}
+                                placeholder="result"
+                                onChange={(event) => updateCampaign(campaign.id, { result: event.target.value || undefined })}
+                              />
+                              <input
+                                type="date"
+                                value={campaign.date ?? ''}
+                                onChange={(event) => updateCampaign(campaign.id, { date: event.target.value || undefined })}
+                              />
+                              <div className="row-actions">
+                                <button
+                                  type="button"
+                                  className="ghost"
+                                  onClick={() => updateCampaign(campaign.id, { archivedAt: campaign.archivedAt ? undefined : new Date().toISOString() })}
+                                >
+                                  {campaign.archivedAt ? 'Unarchive' : 'Archive'}
+                                </button>
+                                <button type="button" className="ghost" onClick={() => deleteCampaign(campaign.id)}>
+                                  Delete
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="followup-section">
+                      <h4>Draft</h4>
+                      {campaignBuckets.draft.length === 0 ? (
+                        <p className="empty-state">None.</p>
+                      ) : (
+                        <ul className="stream-list">
+                          {campaignBuckets.draft.map((campaign) => (
+                            <li key={campaign.id} className="campaign-row">
+                              <input value={campaign.name} onChange={(event) => updateCampaign(campaign.id, { name: event.target.value })} />
+                              <select
+                                value={campaign.status}
+                                onChange={(event) => updateCampaign(campaign.id, { status: event.target.value as Campaign['status'] })}
+                              >
+                                <option value="idea">idea</option>
+                                <option value="draft">draft</option>
+                                <option value="published">published</option>
+                                <option value="measured">measured</option>
+                              </select>
+                              <input
+                                value={campaign.nextStep ?? ''}
+                                placeholder="next"
+                                onChange={(event) => updateCampaign(campaign.id, { nextStep: event.target.value || undefined })}
+                              />
+                              <select
+                                value={campaign.taskId ?? ''}
+                                onChange={(event) => updateCampaign(campaign.id, { taskId: event.target.value || undefined })}
+                              >
+                                <option value="">No task</option>
+                                {tasks.map((task) => (
+                                  <option key={task.id} value={task.id}>
+                                    {task.title}
+                                  </option>
+                                ))}
+                              </select>
+                              <input
+                                value={campaign.hypothesis ?? ''}
+                                placeholder="hypothesis"
+                                onChange={(event) => updateCampaign(campaign.id, { hypothesis: event.target.value || undefined })}
+                              />
+                              <input
+                                value={campaign.metric ?? ''}
+                                placeholder="metric"
+                                onChange={(event) => updateCampaign(campaign.id, { metric: event.target.value || undefined })}
+                              />
+                              <input
+                                value={campaign.result ?? ''}
+                                placeholder="result"
+                                onChange={(event) => updateCampaign(campaign.id, { result: event.target.value || undefined })}
+                              />
+                              <input
+                                type="date"
+                                value={campaign.date ?? ''}
+                                onChange={(event) => updateCampaign(campaign.id, { date: event.target.value || undefined })}
+                              />
+                              <div className="row-actions">
+                                <button
+                                  type="button"
+                                  className="ghost"
+                                  onClick={() => updateCampaign(campaign.id, { archivedAt: campaign.archivedAt ? undefined : new Date().toISOString() })}
+                                >
+                                  {campaign.archivedAt ? 'Unarchive' : 'Archive'}
+                                </button>
+                                <button type="button" className="ghost" onClick={() => deleteCampaign(campaign.id)}>
+                                  Delete
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="followup-section">
+                      <h4>Published</h4>
+                      {campaignBuckets.published.length === 0 ? (
+                        <p className="empty-state">None.</p>
+                      ) : (
+                        <ul className="stream-list">
+                          {campaignBuckets.published.map((campaign) => (
+                            <li key={campaign.id} className="campaign-row">
+                              <input value={campaign.name} onChange={(event) => updateCampaign(campaign.id, { name: event.target.value })} />
+                              <select
+                                value={campaign.status}
+                                onChange={(event) => updateCampaign(campaign.id, { status: event.target.value as Campaign['status'] })}
+                              >
+                                <option value="idea">idea</option>
+                                <option value="draft">draft</option>
+                                <option value="published">published</option>
+                                <option value="measured">measured</option>
+                              </select>
+                              <input
+                                value={campaign.nextStep ?? ''}
+                                placeholder="next"
+                                onChange={(event) => updateCampaign(campaign.id, { nextStep: event.target.value || undefined })}
+                              />
+                              <select
+                                value={campaign.taskId ?? ''}
+                                onChange={(event) => updateCampaign(campaign.id, { taskId: event.target.value || undefined })}
+                              >
+                                <option value="">No task</option>
+                                {tasks.map((task) => (
+                                  <option key={task.id} value={task.id}>
+                                    {task.title}
+                                  </option>
+                                ))}
+                              </select>
+                              <input
+                                value={campaign.hypothesis ?? ''}
+                                placeholder="hypothesis"
+                                onChange={(event) => updateCampaign(campaign.id, { hypothesis: event.target.value || undefined })}
+                              />
+                              <input
+                                value={campaign.metric ?? ''}
+                                placeholder="metric"
+                                onChange={(event) => updateCampaign(campaign.id, { metric: event.target.value || undefined })}
+                              />
+                              <input
+                                value={campaign.result ?? ''}
+                                placeholder="result"
+                                onChange={(event) => updateCampaign(campaign.id, { result: event.target.value || undefined })}
+                              />
+                              <input
+                                type="date"
+                                value={campaign.date ?? ''}
+                                onChange={(event) => updateCampaign(campaign.id, { date: event.target.value || undefined })}
+                              />
+                              <div className="row-actions">
+                                <button
+                                  type="button"
+                                  className="ghost"
+                                  onClick={() => updateCampaign(campaign.id, { archivedAt: campaign.archivedAt ? undefined : new Date().toISOString() })}
+                                >
+                                  {campaign.archivedAt ? 'Unarchive' : 'Archive'}
+                                </button>
+                                <button type="button" className="ghost" onClick={() => deleteCampaign(campaign.id)}>
+                                  Delete
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             </div>

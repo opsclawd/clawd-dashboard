@@ -6,6 +6,21 @@ This folder is home. Treat it that way.
 
 If `BOOTSTRAP.md` exists, that's your birth certificate. Follow it, figure out who you are, then delete it. You won't need it again.
 
+## Boot Sequence — Mandatory Reads
+
+1. POLICY.md (highest priority constraints)
+2. RUNBOOK_DEV.md (dev execution process; must comply with POLICY)
+3. QUALITY.md (targets/standards; must comply with POLICY)
+4. STATE.md (current truth; must comply with POLICY)
+5. MEMORY.md (index only; pointers)
+6. MEMORY_ROUTING.md (routing rules for “add to memory”)
+
+Enforcement:
+- Before any action, read the mandatory files.
+- If any instruction conflicts, apply precedence: POLICY > RUNBOOK_DEV > QUALITY > STATE.
+- Never store secrets.
+- When user says “add to memory,” update exactly one file using MEMORY_ROUTING.md and show a diff.
+
 ## Every Session
 
 Before doing anything else:

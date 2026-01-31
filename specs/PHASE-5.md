@@ -108,9 +108,9 @@ Acceptance criteria:
 
 ---
 
-## 5) Open Questions
+## 5) Decisions (answered)
 
-1. What is “today” for follow-up comparisons: local timezone midnight or rolling 24h?
-2. Follow-up “due soon” window: 7 days or configurable?
-3. Do we want “archive” semantics for completed items, or just filters?
-4. Should stream planning views live on the main dashboard, or inside each stream panel only?
+1. **“Today”** is based on **local timezone midnight**.
+2. Follow-up “due soon” window is **7 days**.
+3. Use **archive completed items** (not just filters).
+4. Main dashboard shows **summaries**, and each stream panel contains the **detailed planning view**.

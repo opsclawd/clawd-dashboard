@@ -13,6 +13,7 @@ logs/*.sqlite3
 data/db.sqlite
 data/index.sqlite
 data/indexer-offset.json
+data/reminders.json
 
 # artifacts can be large
 artifacts/exports/

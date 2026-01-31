@@ -9,6 +9,8 @@ import { registerGitRoutes } from './routes/git';
 import { registerHealthRoute } from './routes/health';
 import { registerIndexerRoutes } from './routes/indexer';
 import { registerSavedFilterRoutes } from './routes/saved-filters';
+import { registerAutomationRoutes } from './routes/automation';
+import { registerStreamRoutes } from './routes/streams';
 import { registerTaskRoutes } from './routes/tasks';
 
 export const registerRoutes = (
@@ -20,6 +22,9 @@ export const registerRoutes = (
     gitService: GitService;
     savedFilterService: import('../application/saved-filters').SavedFilterService;
     indexService: import('../application/indexer').IndexService;
+    streamService: import('../application/streams').StreamService;
+    digestService: import('../application/digest').DigestService;
+    reminderService: import('../application/reminders').ReminderService;
   }
 ) => {
   registerHealthRoute(fastify);
@@ -29,4 +34,6 @@ export const registerRoutes = (
   registerGitRoutes(fastify, deps.gitService);
   registerSavedFilterRoutes(fastify, deps.savedFilterService);
   registerIndexerRoutes(fastify, deps.indexService);
+  registerStreamRoutes(fastify, deps.streamService);
+  registerAutomationRoutes(fastify, deps.digestService, deps.reminderService);
 };

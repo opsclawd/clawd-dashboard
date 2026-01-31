@@ -37,6 +37,33 @@ type ArtifactItem = {
   lastCommitSha?: string;
 };
 
+type ChecklistItem = {
+  id: string;
+  title: string;
+  status: 'todo' | 'in_progress' | 'done';
+  notes?: string;
+};
+
+type JobApplication = {
+  id: string;
+  company: string;
+  role: string;
+  link?: string;
+  status: 'draft' | 'applied' | 'interview' | 'offer' | 'rejected';
+  followUpDate?: string;
+  resume?: string;
+};
+
+type Campaign = {
+  id: string;
+  name: string;
+  status: 'idea' | 'draft' | 'published' | 'measured';
+  hypothesis?: string;
+  metric?: string;
+  result?: string;
+  date?: string;
+};
+
 type SavedFilter = {
   name: string;
   stream: string;
@@ -185,6 +212,14 @@ export function App() {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskStream, setNewTaskStream] = useState('job-search');
 
+  const [cannabisChecklist, setCannabisChecklist] = useState<ChecklistItem[]>([]);
+  const [jobApplications, setJobApplications] = useState<JobApplication[]>([]);
+  const [marketingCampaigns, setMarketingCampaigns] = useState<Campaign[]>([]);
+  const [newChecklistTitle, setNewChecklistTitle] = useState('');
+  const [newAppCompany, setNewAppCompany] = useState('');
+  const [newAppRole, setNewAppRole] = useState('');
+  const [newCampaignName, setNewCampaignName] = useState('');
+
   useEffect(() => {
     const params = new URLSearchParams();
     if (eventStream) params.set('stream', eventStream);
@@ -258,6 +293,23 @@ export function App() {
       .catch((e) => setError(String(e)));
   }, []);
 
+  useEffect(() => {
+    fetch('http://127.0.0.1:5174/api/v1/streams/cannabis/checklist')
+      .then((r) => r.json())
+      .then((data) => setCannabisChecklist(data.items ?? []))
+      .catch(() => undefined);
+
+    fetch('http://127.0.0.1:5174/api/v1/streams/job-search/applications')
+      .then((r) => r.json())
+      .then((data) => setJobApplications(data.items ?? []))
+      .catch(() => undefined);
+
+    fetch('http://127.0.0.1:5174/api/v1/streams/marketing/campaigns')
+      .then((r) => r.json())
+      .then((data) => setMarketingCampaigns(data.items ?? []))
+      .catch(() => undefined);
+  }, []);
+
   const addTask = async () => {
     if (!newTaskTitle.trim()) return;
     const payload: TaskItem = {
@@ -313,6 +365,59 @@ export function App() {
     setSavedFilters((prev) => [newFilter, ...prev.filter((filter) => filter.name.toLowerCase() !== name.toLowerCase())]);
     setSavedFilterName('');
     setActiveSavedFilter(name);
+  };
+
+  const addChecklistItem = async () => {
+    if (!newChecklistTitle.trim()) return;
+    const next: ChecklistItem = {
+      id: crypto.randomUUID(),
+      title: newChecklistTitle.trim(),
+      status: 'todo'
+    };
+    const updated = [next, ...cannabisChecklist];
+    setCannabisChecklist(updated);
+    setNewChecklistTitle('');
+    await fetch('http://127.0.0.1:5174/api/v1/streams/cannabis/checklist', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ items: updated })
+    });
+  };
+
+  const addJobApplication = async () => {
+    if (!newAppCompany.trim() || !newAppRole.trim()) return;
+    const next: JobApplication = {
+      id: crypto.randomUUID(),
+      company: newAppCompany.trim(),
+      role: newAppRole.trim(),
+      status: 'draft'
+    };
+    const updated = [next, ...jobApplications];
+    setJobApplications(updated);
+    setNewAppCompany('');
+    setNewAppRole('');
+    await fetch('http://127.0.0.1:5174/api/v1/streams/job-search/applications', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ items: updated })
+    });
+  };
+
+  const addCampaign = async () => {
+    if (!newCampaignName.trim()) return;
+    const next: Campaign = {
+      id: crypto.randomUUID(),
+      name: newCampaignName.trim(),
+      status: 'idea'
+    };
+    const updated = [next, ...marketingCampaigns];
+    setMarketingCampaigns(updated);
+    setNewCampaignName('');
+    await fetch('http://127.0.0.1:5174/api/v1/streams/marketing/campaigns', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ items: updated })
+    });
   };
 
   const handleApplySavedFilter = (filter: SavedFilter) => {
@@ -476,6 +581,85 @@ export function App() {
                   </div>
                 </div>
               ))}
+            </div>
+          </section>
+
+          <section className="panel streams-panel">
+            <div className="panel-header">
+              <div>
+                <h2>Stream modules</h2>
+                <p className="panel-subtitle">Operational checklists and trackers.</p>
+              </div>
+              <span className="panel-count">
+                {cannabisChecklist.length + jobApplications.length + marketingCampaigns.length} items
+              </span>
+            </div>
+            <div className="stream-grid">
+              <div className="stream-card">
+                <h3>Cannabis (ON) checklist</h3>
+                <div className="stream-form">
+                  <input
+                    placeholder="Checklist item"
+                    value={newChecklistTitle}
+                    onChange={(event) => setNewChecklistTitle(event.target.value)}
+                  />
+                  <button type="button" className="ghost" onClick={addChecklistItem}>
+                    Add
+                  </button>
+                </div>
+                <ul>
+                  {cannabisChecklist.slice(0, 5).map((item) => (
+                    <li key={item.id}>
+                      {item.title} • {item.status}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="stream-card">
+                <h3>Job applications</h3>
+                <div className="stream-form">
+                  <input
+                    placeholder="Company"
+                    value={newAppCompany}
+                    onChange={(event) => setNewAppCompany(event.target.value)}
+                  />
+                  <input
+                    placeholder="Role"
+                    value={newAppRole}
+                    onChange={(event) => setNewAppRole(event.target.value)}
+                  />
+                  <button type="button" className="ghost" onClick={addJobApplication}>
+                    Add
+                  </button>
+                </div>
+                <ul>
+                  {jobApplications.slice(0, 5).map((app) => (
+                    <li key={app.id}>
+                      {app.company} — {app.role} • {app.status}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="stream-card">
+                <h3>Marketing campaigns</h3>
+                <div className="stream-form">
+                  <input
+                    placeholder="Campaign"
+                    value={newCampaignName}
+                    onChange={(event) => setNewCampaignName(event.target.value)}
+                  />
+                  <button type="button" className="ghost" onClick={addCampaign}>
+                    Add
+                  </button>
+                </div>
+                <ul>
+                  {marketingCampaigns.slice(0, 5).map((campaign) => (
+                    <li key={campaign.id}>
+                      {campaign.name} • {campaign.status}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </section>
 

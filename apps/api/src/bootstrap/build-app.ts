@@ -10,6 +10,9 @@ import { ArtifactService } from '../application/artifacts';
 import { EventService } from '../application/events';
 import { TaskService } from '../application/tasks';
 import { SavedFilterService } from '../application/saved-filters';
+import { StreamService } from '../application/streams';
+import { DigestService } from '../application/digest';
+import { ReminderService } from '../application/reminders';
 
 import { registerRoutes } from '../interface/register-routes';
 import { GitRepository } from '../infrastructure/git';
@@ -36,19 +39,44 @@ export const buildApp = async (deps: AppDeps = {}) => {
   const gitRepository = new GitRepository(ROOT);
   const savedFilterRepository = new SavedFilterRepository(SAVED_FILTERS_PATH);
   const indexService = new IndexService(ROOT);
+  const streamService = new StreamService();
 
   const eventService = new EventService(eventRepository);
   const taskService = new TaskService(taskRepository);
   const artifactService = new ArtifactService(artifactRepository);
   const gitService = new GitService(gitRepository);
   const savedFilterService = new SavedFilterService(savedFilterRepository);
+  const digestService = new DigestService(eventRepository, taskRepository);
+  const reminderService = new ReminderService(eventService, taskService);
 
   await fastify.register(cors, {
     origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
     credentials: false
   });
 
-  registerRoutes(fastify, { eventService, taskService, artifactService, gitService, savedFilterService, indexService });
+  const token = process.env.AUTH_TOKEN;
+  if (token) {
+    fastify.addHook('onRequest', async (req, res) => {
+      const auth = req.headers.authorization ?? '';
+      const expected = `Basic ${Buffer.from(`gary:${token}`).toString('base64')}`;
+      if (auth !== expected) {
+        res.header('www-authenticate', 'Basic');
+        return res.status(401).send({ error: 'Unauthorized' });
+      }
+    });
+  }
+
+  registerRoutes(fastify, {
+    eventService,
+    taskService,
+    artifactService,
+    gitService,
+    savedFilterService,
+    indexService,
+    streamService,
+    digestService,
+    reminderService
+  });
 
   return fastify;
 };

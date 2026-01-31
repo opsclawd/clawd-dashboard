@@ -16,6 +16,7 @@ export type JobApplication = {
   status: 'draft' | 'applied' | 'interview' | 'offer' | 'rejected';
   followUpDate?: string;
   resume?: string;
+  taskId?: string;
 };
 
 export type Campaign = {
@@ -136,6 +137,7 @@ export class StreamService {
           const bits: string[] = [`${app.company} — ${app.role}`];
           if (app.followUpDate) bits.push(`follow-up: ${app.followUpDate}`);
           if (app.resume) bits.push(`resume: ${app.resume}`);
+          if (app.taskId) bits.push(`task: ${app.taskId}`);
           const suffix = bits.length > 1 ? ` (${bits.slice(1).join(', ')})` : '';
           const link = app.link ? ` — ${app.link}` : '';
           lines.push(`- ${bits[0]}${suffix}${link}`);

@@ -52,6 +52,7 @@ type JobApplication = {
   status: 'draft' | 'applied' | 'interview' | 'offer' | 'rejected';
   followUpDate?: string;
   resume?: string;
+  taskId?: string;
 };
 
 type Campaign = {
@@ -241,6 +242,7 @@ export function App() {
   const [newAppStatus, setNewAppStatus] = useState<JobApplication['status']>('draft');
   const [newAppFollowUpDate, setNewAppFollowUpDate] = useState('');
   const [newAppResume, setNewAppResume] = useState('');
+  const [newAppTaskId, setNewAppTaskId] = useState('');
 
   const [newCampaignName, setNewCampaignName] = useState('');
   const [newCampaignStatus, setNewCampaignStatus] = useState<Campaign['status']>('idea');
@@ -466,7 +468,8 @@ export function App() {
       link: newAppLink.trim() ? newAppLink.trim() : undefined,
       status: newAppStatus,
       followUpDate: newAppFollowUpDate.trim() ? newAppFollowUpDate.trim() : undefined,
-      resume: newAppResume.trim() ? newAppResume.trim() : undefined
+      resume: newAppResume.trim() ? newAppResume.trim() : undefined,
+      taskId: newAppTaskId.trim() ? newAppTaskId.trim() : undefined
     };
     const updated = [next, ...jobApplications];
     setJobApplications(updated);
@@ -476,6 +479,7 @@ export function App() {
     setNewAppStatus('draft');
     setNewAppFollowUpDate('');
     setNewAppResume('');
+    setNewAppTaskId('');
     await persistJobApplications(updated);
   };
 
@@ -777,7 +781,7 @@ export function App() {
                 ) : (
                   <ul className="stream-list">
                     {cannabisChecklist.map((item) => (
-                      <li key={item.id} className="stream-row">
+                      <li key={item.id} className="checklist-row">
                         <input
                           value={item.title}
                           onChange={(event) => updateChecklistItem(item.id, { title: event.target.value })}
@@ -831,6 +835,14 @@ export function App() {
                     value={newAppResume}
                     onChange={(event) => setNewAppResume(event.target.value)}
                   />
+                  <select value={newAppTaskId} onChange={(event) => setNewAppTaskId(event.target.value)}>
+                    <option value="">No task</option>
+                    {tasks.map((task) => (
+                      <option key={task.id} value={task.id}>
+                        {task.title}
+                      </option>
+                    ))}
+                  </select>
                   <button type="button" className="ghost" onClick={addJobApplication}>
                     Add
                   </button>
@@ -840,7 +852,7 @@ export function App() {
                 ) : (
                   <ul className="stream-list">
                     {jobApplications.map((app) => (
-                      <li key={app.id} className="stream-row">
+                      <li key={app.id} className="job-row">
                         <input value={app.company} onChange={(event) => updateJobApplication(app.id, { company: event.target.value })} />
                         <input value={app.role} onChange={(event) => updateJobApplication(app.id, { role: event.target.value })} />
                         <input
@@ -868,6 +880,17 @@ export function App() {
                           placeholder="resume"
                           onChange={(event) => updateJobApplication(app.id, { resume: event.target.value || undefined })}
                         />
+                        <select
+                          value={app.taskId ?? ''}
+                          onChange={(event) => updateJobApplication(app.id, { taskId: event.target.value || undefined })}
+                        >
+                          <option value="">No task</option>
+                          {tasks.map((task) => (
+                            <option key={task.id} value={task.id}>
+                              {task.title}
+                            </option>
+                          ))}
+                        </select>
                         <button type="button" className="ghost" onClick={() => deleteJobApplication(app.id)}>
                           Delete
                         </button>
@@ -919,7 +942,7 @@ export function App() {
                 ) : (
                   <ul className="stream-list">
                     {marketingCampaigns.map((campaign) => (
-                      <li key={campaign.id} className="stream-row">
+                      <li key={campaign.id} className="campaign-row">
                         <input
                           value={campaign.name}
                           onChange={(event) => updateCampaign(campaign.id, { name: event.target.value })}

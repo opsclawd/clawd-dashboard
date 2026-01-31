@@ -12,3 +12,7 @@ RUNBOOK_DEV.md: operational dev workflow rules.
 QUALITY.md: test/coverage and quality targets.
 STATE.md: current priorities and time-sensitive rules.
 MEMORY_ROUTING.md: routing rubric for where new memories go.
+
+MODEL_PREFERENCE:
+- Coding/dev implementation tasks: use model alias `codex`.
+- Spec drafting / brainstorming / conversation: use model alias `gpt`.

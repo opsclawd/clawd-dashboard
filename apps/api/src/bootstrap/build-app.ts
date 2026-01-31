@@ -88,7 +88,8 @@ export const buildApp = async (deps: AppDeps = {}) => {
     streamService,
     digestService,
     reminderService,
-    digestSubscriptionService
+    digestSubscriptionService,
+    rootDir: ROOT
   });
 
   return fastify;

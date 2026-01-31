@@ -1,12 +1,14 @@
 import Database from 'better-sqlite3';
 import path from 'node:path';
+import fs from 'node:fs';
 
 export class IndexReader {
   private db: Database.Database;
 
   constructor(private readonly rootDir: string) {
     const dbPath = path.join(this.rootDir, 'data', 'index.sqlite');
-    this.db = new Database(dbPath, { readonly: true, fileMustExist: false });
+    fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+    this.db = new Database(dbPath); // open read/write if needed
   }
 
   listEvents(params: {

@@ -9,7 +9,12 @@ export const registerStreamRoutes = (fastify: FastifyInstance, service: StreamSe
     service.saveCannabisChecklist(body.items ?? []);
     return { ok: true };
   });
-  fastify.get('/api/v1/streams/cannabis/checklist/export', async () => ({ items: service.listCannabisChecklist() }));
+  fastify.get('/api/v1/streams/cannabis/checklist/export', async (req, res) => {
+    const items = service.listCannabisChecklist();
+    res.header('content-type', 'text/csv');
+    const csv = ['id,title,status,notes', ...items.map((i) => `${i.id},${i.title},${i.status},${i.notes ?? ''}`)].join('\n');
+    return csv;
+  });
 
   // Job applications
   fastify.get('/api/v1/streams/job-search/applications', async () => ({ items: service.listJobApplications() }));
@@ -18,7 +23,12 @@ export const registerStreamRoutes = (fastify: FastifyInstance, service: StreamSe
     service.saveJobApplications(body.items ?? []);
     return { ok: true };
   });
-  fastify.get('/api/v1/streams/job-search/applications/export', async () => ({ items: service.listJobApplications() }));
+  fastify.get('/api/v1/streams/job-search/applications/export', async (req, res) => {
+    const items = service.listJobApplications();
+    res.header('content-type', 'text/csv');
+    const csv = ['id,company,role,link,status,followUpDate,resume', ...items.map((i) => `${i.id},${i.company},${i.role},${i.link ?? ''},${i.status},${i.followUpDate ?? ''},${i.resume ?? ''}`)].join('\n');
+    return csv;
+  });
 
   // Marketing campaigns
   fastify.get('/api/v1/streams/marketing/campaigns', async () => ({ items: service.listMarketingCampaigns() }));
@@ -27,5 +37,10 @@ export const registerStreamRoutes = (fastify: FastifyInstance, service: StreamSe
     service.saveMarketingCampaigns(body.items ?? []);
     return { ok: true };
   });
-  fastify.get('/api/v1/streams/marketing/campaigns/export', async () => ({ items: service.listMarketingCampaigns() }));
+  fastify.get('/api/v1/streams/marketing/campaigns/export', async (req, res) => {
+    const items = service.listMarketingCampaigns();
+    res.header('content-type', 'text/csv');
+    const csv = ['id,name,status,hypothesis,metric,result,date', ...items.map((i) => `${i.id},${i.name},${i.status},${i.hypothesis ?? ''},${i.metric ?? ''},${i.result ?? ''},${i.date ?? ''}`)].join('\n');
+    return csv;
+  });
 };

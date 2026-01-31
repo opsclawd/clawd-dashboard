@@ -28,10 +28,11 @@ export const registerRoutes = (
     digestService: import('../application/digest').DigestService;
     reminderService: import('../application/reminders').ReminderService;
     digestSubscriptionService: import('../application/digest-subscriptions').DigestSubscriptionService;
+    rootDir: string;
   }
 ) => {
   registerHealthRoute(fastify);
-  registerEventRoutes(fastify, deps.eventService);
+  registerEventRoutes(fastify, deps.eventService, deps.rootDir);
   registerTaskRoutes(fastify, deps.taskService, deps.eventService);
   registerArtifactRoutes(fastify, deps.artifactService, deps.gitService);
   registerGitRoutes(fastify, deps.gitService);

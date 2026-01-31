@@ -25,6 +25,8 @@
     "eslint": "^8.57.1"
   },
   "dependencies": {
-    "better-sqlite3": "^12.6.2"
+    "@fastify/static": "^9.0.0",
+    "better-sqlite3": "^12.6.2",
+    "sqlite3": "^5.1.7"
   }
 }

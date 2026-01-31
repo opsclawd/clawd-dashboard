@@ -128,6 +128,76 @@ describe('API integration', () => {
     expect(typeof diff.text).toBe('string');
   });
 
+  it('Indexing + integrity endpoints', async () => {
+    const rebuild = await request(app.server).post('/api/v1/index/rebuild');
+    expect(rebuild.status).toBe(200);
+    const tick = await request(app.server).post('/api/v1/index/tick');
+    expect(tick.status).toBe(200);
+
+    const indexed = await request(app.server).get('/api/v1/events?indexed=1');
+    expect(indexed.status).toBe(200);
+
+    const integrity = await request(app.server).get('/api/v1/integrity/check');
+    expect(integrity.status).toBe(200);
+  });
+
+  it('Streams export CSV endpoints', async () => {
+    const cannabisSave = await request(app.server)
+      .post('/api/v1/streams/cannabis/checklist')
+      .send({ items: [{ id: 'c1', title: 'Step', status: 'todo' }] });
+    expect(cannabisSave.status).toBe(200);
+    const cannabis = await request(app.server).get('/api/v1/streams/cannabis/checklist/export');
+    expect(cannabis.status).toBe(200);
+
+    const jobSave = await request(app.server)
+      .post('/api/v1/streams/job-search/applications')
+      .send({ items: [{ id: 'j1', company: 'Co', role: 'Dev', status: 'applied' }] });
+    expect(jobSave.status).toBe(200);
+    const job = await request(app.server).get('/api/v1/streams/job-search/applications/export');
+    expect(job.status).toBe(200);
+
+    const marketingSave = await request(app.server)
+      .post('/api/v1/streams/marketing/campaigns')
+      .send({ items: [{ id: 'm1', name: 'Campaign', status: 'idea' }] });
+    expect(marketingSave.status).toBe(200);
+    const marketing = await request(app.server).get('/api/v1/streams/marketing/campaigns/export');
+    expect(marketing.status).toBe(200);
+  });
+
+  it('Digest + reminders + subscriptions endpoints', async () => {
+    const daily = await request(app.server).get('/api/v1/digest/daily');
+    expect(daily.status).toBe(200);
+
+    const reminderBad = await request(app.server).post('/api/v1/reminders').send({ message: 'Missing fields' });
+    expect(reminderBad.status).toBe(400);
+
+    const reminder = await request(app.server).post('/api/v1/reminders').send({
+      id: 'r2',
+      message: 'Follow up',
+      when: new Date().toISOString(),
+      stream: 'dashboard'
+    });
+    expect(reminder.status).toBe(200);
+
+    const subsBad = await request(app.server).post('/api/v1/digest/subscriptions').send({ channel: 'telegram' });
+    expect(subsBad.status).toBe(400);
+
+    const subs = await request(app.server).post('/api/v1/digest/subscriptions').send({
+      channel: 'telegram',
+      to: 'chat',
+      enabled: true
+    });
+    expect(subs.status).toBe(200);
+    const listSubs = await request(app.server).get('/api/v1/digest/subscriptions');
+    expect(listSubs.status).toBe(200);
+
+    const id = listSubs.body.items?.[0]?.id;
+    if (id) {
+      const del = await request(app.server).delete(`/api/v1/digest/subscriptions/${id}`);
+      expect(del.status).toBe(200);
+    }
+  });
+
   it('GET /api/v1/artifacts returns items array', async () => {
     const res = await request(app.server).get('/api/v1/artifacts');
     expect(res.status).toBe(200);

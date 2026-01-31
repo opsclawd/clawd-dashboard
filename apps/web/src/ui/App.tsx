@@ -219,6 +219,8 @@ export function App() {
   const [newAppCompany, setNewAppCompany] = useState('');
   const [newAppRole, setNewAppRole] = useState('');
   const [newCampaignName, setNewCampaignName] = useState('');
+  const [integrityStatus, setIntegrityStatus] = useState<'ok' | 'fail' | 'unknown'>('unknown');
+  const [integrityMessage, setIntegrityMessage] = useState('');
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -309,6 +311,16 @@ export function App() {
       .then((r) => r.json())
       .then((data) => setMarketingCampaigns(data.items ?? []))
       .catch(() => undefined);
+
+    fetch('http://127.0.0.1:5174/api/v1/integrity/check')
+      .then((r) => r.json())
+      .then((data) => {
+        setIntegrityStatus(data.ok ? 'ok' : 'fail');
+        setIntegrityMessage(data.message ?? '');
+      })
+      .catch(() => {
+        setIntegrityStatus('unknown');
+      });
   }, []);
 
   const addTask = async () => {
@@ -497,7 +509,15 @@ export function App() {
         {error && <div className="error-card">{error}</div>}
 
         <div className="integrity-banner">
-          Log integrity: <span className="status-pill status-ok">OK</span>
+          Log integrity:{' '}
+          <span
+            className={`status-pill ${
+              integrityStatus === 'ok' ? 'status-ok' : integrityStatus === 'fail' ? 'status-bad' : 'status-unknown'
+            }`}
+          >
+            {integrityStatus === 'ok' ? 'OK' : integrityStatus === 'fail' ? 'FAIL' : 'Unknown'}
+          </span>
+          {integrityMessage && <span className="integrity-message">{integrityMessage}</span>}
           <button
             type="button"
             className="ghost"
@@ -505,9 +525,11 @@ export function App() {
               try {
                 const res = await fetch('http://127.0.0.1:5174/api/v1/integrity/check');
                 const data = await res.json();
-                console.log('Integrity', data);
+                setIntegrityStatus(data.ok ? 'ok' : 'fail');
+                setIntegrityMessage(data.message ?? '');
               } catch {
-                // ignore
+                setIntegrityStatus('fail');
+                setIntegrityMessage('Check failed');
               }
             }}
           >

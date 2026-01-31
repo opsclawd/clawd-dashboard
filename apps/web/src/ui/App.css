@@ -51,8 +51,27 @@ body {
   padding: 2px 8px;
   border-radius: 999px;
   font-weight: 600;
+}
+
+.status-ok {
   background: #dcfce7;
   color: #166534;
+}
+
+.status-bad {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-unknown {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.integrity-message {
+  margin-left: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 
 .eyebrow {

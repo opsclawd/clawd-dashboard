@@ -2,8 +2,12 @@ import type { FastifyInstance } from 'fastify';
 import { EventService } from '../../application/events';
 import { IndexReader } from '../../application/index-reader';
 
-export const registerEventRoutes = (fastify: FastifyInstance, eventService: EventService) => {
-  const indexReader = new IndexReader(process.cwd());
+export const registerEventRoutes = (
+  fastify: FastifyInstance,
+  eventService: EventService,
+  rootDir: string
+) => {
+  const indexReader = new IndexReader(rootDir);
   fastify.get('/api/v1/events', async (req) => {
     const query = req.query as {
       stream?: string;

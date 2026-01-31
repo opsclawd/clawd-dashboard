@@ -73,8 +73,18 @@ type SavedFilter = {
   query: string;
 };
 
+type DigestSubscription = {
+  id: string;
+  channel: string;
+  to: string;
+  enabled: boolean;
+};
+
 const SAVED_FILTERS_KEY = 'clawd.savedEventFilters'; // legacy localStorage fallback
 const SAVED_FILTERS_API = 'http://127.0.0.1:5174/api/v1/saved-filters';
+
+const DIGEST_SUBSCRIPTIONS_API = 'http://127.0.0.1:5174/api/v1/digest/subscriptions';
+const DIGEST_PREVIEW_API = 'http://127.0.0.1:5174/api/v1/digest/daily';
 
 const columns: TaskItem['status'][] = ['backlog', 'next', 'in_progress', 'blocked', 'done'];
 
@@ -209,6 +219,12 @@ export function App() {
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [selectedCommitSha, setSelectedCommitSha] = useState(commitPreviews[0].sha);
 
+  const [digestSubscriptions, setDigestSubscriptions] = useState<DigestSubscription[]>([]);
+  const [newDigestChannel, setNewDigestChannel] = useState('telegram');
+  const [newDigestTo, setNewDigestTo] = useState('');
+  const [digestPreview, setDigestPreview] = useState<string>('');
+  const [digestError, setDigestError] = useState<string | null>(null);
+
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskStream, setNewTaskStream] = useState('job-search');
 
@@ -323,6 +339,11 @@ export function App() {
     fetch('http://127.0.0.1:5174/api/v1/streams/marketing/campaigns')
       .then((r) => r.json())
       .then((data) => setMarketingCampaigns(data.items ?? []))
+      .catch(() => undefined);
+
+    fetch(DIGEST_SUBSCRIPTIONS_API)
+      .then((r) => r.json())
+      .then((data) => setDigestSubscriptions(data.items ?? []))
       .catch(() => undefined);
 
     fetch('http://127.0.0.1:5174/api/v1/integrity/check')
@@ -939,6 +960,146 @@ export function App() {
                     ))}
                   </ul>
                 )}
+              </div>
+            </div>
+          </section>
+
+          <section className="panel digest-panel">
+            <div className="panel-header">
+              <div>
+                <h2>Digest delivery</h2>
+                <p className="panel-subtitle">Manage subscriptions and preview the daily digest.</p>
+              </div>
+              <span className="panel-count">{digestSubscriptions.length} subs</span>
+            </div>
+
+            {digestError && <div className="error-card">{digestError}</div>}
+
+            <div className="digest-grid">
+              <div className="digest-card">
+                <h3>Subscriptions</h3>
+
+                <div className="stream-form">
+                  <select value={newDigestChannel} onChange={(event) => setNewDigestChannel(event.target.value)}>
+                    <option value="telegram">telegram</option>
+                    <option value="signal">signal</option>
+                    <option value="discord">discord</option>
+                  </select>
+                  <input placeholder="to" value={newDigestTo} onChange={(event) => setNewDigestTo(event.target.value)} />
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={async () => {
+                      const to = newDigestTo.trim();
+                      if (!to) return;
+                      setDigestError(null);
+                      try {
+                        const res = await fetch(DIGEST_SUBSCRIPTIONS_API, {
+                          method: 'POST',
+                          headers: { 'content-type': 'application/json' },
+                          body: JSON.stringify({ channel: newDigestChannel, to, enabled: true })
+                        });
+                        if (!res.ok) throw new Error(`Failed to save subscription (${res.status})`);
+                        const refreshed = await fetch(DIGEST_SUBSCRIPTIONS_API).then((r) => r.json());
+                        setDigestSubscriptions(refreshed.items ?? []);
+                        setNewDigestTo('');
+                      } catch (err) {
+                        setDigestError(String(err));
+                      }
+                    }}
+                  >
+                    Add
+                  </button>
+                </div>
+
+                {digestSubscriptions.length === 0 ? (
+                  <p className="empty-state">No subscriptions yet.</p>
+                ) : (
+                  <ul className="digest-sub-list">
+                    {digestSubscriptions.map((sub) => (
+                      <li key={sub.id} className="digest-sub-row">
+                        <code>
+                          {sub.channel}:{sub.to}
+                        </code>
+                        <label className="toggle">
+                          <input
+                            type="checkbox"
+                            checked={sub.enabled}
+                            onChange={async (event) => {
+                              const enabled = event.target.checked;
+                              setDigestError(null);
+                              try {
+                                const res = await fetch(DIGEST_SUBSCRIPTIONS_API, {
+                                  method: 'POST',
+                                  headers: { 'content-type': 'application/json' },
+                                  body: JSON.stringify({ id: sub.id, channel: sub.channel, to: sub.to, enabled })
+                                });
+                                if (!res.ok) throw new Error(`Failed to update subscription (${res.status})`);
+                                setDigestSubscriptions((prev) => prev.map((s) => (s.id === sub.id ? { ...s, enabled } : s)));
+                              } catch (err) {
+                                setDigestError(String(err));
+                              }
+                            }}
+                          />
+                          <span>enabled</span>
+                        </label>
+                        <button
+                          type="button"
+                          className="ghost"
+                          onClick={async () => {
+                            setDigestError(null);
+                            try {
+                              const res = await fetch(`${DIGEST_SUBSCRIPTIONS_API}/${sub.id}`, { method: 'DELETE' });
+                              if (!res.ok) throw new Error(`Failed to delete subscription (${res.status})`);
+                              setDigestSubscriptions((prev) => prev.filter((s) => s.id !== sub.id));
+                            } catch (err) {
+                              setDigestError(String(err));
+                            }
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className="digest-card">
+                <h3>Daily digest preview</h3>
+                <div className="digest-actions">
+                  <button
+                    type="button"
+                    className="primary"
+                    onClick={async () => {
+                      setDigestError(null);
+                      try {
+                        const res = await fetch(DIGEST_PREVIEW_API);
+                        if (!res.ok) throw new Error(`Failed to fetch digest (${res.status})`);
+                        const data = (await res.json()) as { digest?: string };
+                        setDigestPreview(data.digest ?? '');
+                      } catch (err) {
+                        setDigestError(String(err));
+                      }
+                    }}
+                  >
+                    Refresh
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(digestPreview);
+                      } catch {
+                        // ignore
+                      }
+                    }}
+                  >
+                    Copy
+                  </button>
+                </div>
+                <pre className="digest-preview">{digestPreview || 'No preview yet.'}</pre>
               </div>
             </div>
           </section>

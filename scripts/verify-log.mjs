@@ -28,8 +28,9 @@ const sha256 = (value) => crypto.createHash('sha256').update(value).digest('hex'
 for (let i = 0; i < lines.length; i += 1) {
   const event = JSON.parse(lines[i]);
   const expectedPrev = prevHash;
-  const { hash, ...rest } = event;
-  const canonical = stableStringify(rest);
+  const payload = { ...event };
+  delete payload.hash;
+  const canonical = stableStringify(payload);
   const expectedHash = sha256(`${expectedPrev}${canonical}`);
 
   if (event.prevHash !== expectedPrev || event.hash !== expectedHash) {

@@ -27,10 +27,12 @@ const sha256 = (value) => crypto.createHash('sha256').update(value).digest('hex'
 let prevHash = '';
 const nextLines = lines.map((line) => {
   const event = JSON.parse(line);
-  const { hash, prevHash: _prev, ...rest } = event;
-  const canonical = stableStringify({ ...rest, prevHash });
+  const payload = { ...event };
+  delete payload.hash;
+  delete payload.prevHash;
+  const canonical = stableStringify({ ...payload, prevHash });
   const nextHash = sha256(`${prevHash}${canonical}`);
-  const nextEvent = { ...rest, prevHash, hash: nextHash };
+  const nextEvent = { ...payload, prevHash, hash: nextHash };
   prevHash = nextHash;
   return JSON.stringify(nextEvent);
 });

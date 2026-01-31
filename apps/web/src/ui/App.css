@@ -354,6 +354,22 @@ button.primary:hover {
   font-size: 0.85rem;
 }
 
+.stream-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stream-row {
+  display: grid;
+  grid-template-columns: 1.4fr 0.9fr 1.2fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
 .stream-form {
   display: flex;
   flex-wrap: wrap;
@@ -361,11 +377,18 @@ button.primary:hover {
   margin: 8px 0;
 }
 
-.stream-form input {
+.stream-form input,
+.stream-form select {
   flex: 1 1 120px;
   padding: 6px 8px;
   border-radius: 6px;
   border: 1px solid #e5e7eb;
+}
+
+.stream-row input,
+.stream-row select {
+  width: 100%;
+  min-width: 0;
 }
 
 .pagination-controls {

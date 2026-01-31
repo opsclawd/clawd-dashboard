@@ -215,10 +215,23 @@ export function App() {
   const [cannabisChecklist, setCannabisChecklist] = useState<ChecklistItem[]>([]);
   const [jobApplications, setJobApplications] = useState<JobApplication[]>([]);
   const [marketingCampaigns, setMarketingCampaigns] = useState<Campaign[]>([]);
+
   const [newChecklistTitle, setNewChecklistTitle] = useState('');
+  const [newChecklistNotes, setNewChecklistNotes] = useState('');
+
   const [newAppCompany, setNewAppCompany] = useState('');
   const [newAppRole, setNewAppRole] = useState('');
+  const [newAppLink, setNewAppLink] = useState('');
+  const [newAppStatus, setNewAppStatus] = useState<JobApplication['status']>('draft');
+  const [newAppFollowUpDate, setNewAppFollowUpDate] = useState('');
+  const [newAppResume, setNewAppResume] = useState('');
+
   const [newCampaignName, setNewCampaignName] = useState('');
+  const [newCampaignStatus, setNewCampaignStatus] = useState<Campaign['status']>('idea');
+  const [newCampaignHypothesis, setNewCampaignHypothesis] = useState('');
+  const [newCampaignMetric, setNewCampaignMetric] = useState('');
+  const [newCampaignResult, setNewCampaignResult] = useState('');
+  const [newCampaignDate, setNewCampaignDate] = useState('');
   const [integrityStatus, setIntegrityStatus] = useState<'ok' | 'fail' | 'unknown'>('unknown');
   const [integrityMessage, setIntegrityMessage] = useState('');
 
@@ -380,20 +393,46 @@ export function App() {
     setActiveSavedFilter(name);
   };
 
+  const persistCannabisChecklist = async (nextItems: ChecklistItem[]) => {
+    await fetch('http://127.0.0.1:5174/api/v1/streams/cannabis/checklist', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ items: nextItems })
+    });
+  };
+
   const addChecklistItem = async () => {
     if (!newChecklistTitle.trim()) return;
     const next: ChecklistItem = {
       id: crypto.randomUUID(),
       title: newChecklistTitle.trim(),
-      status: 'todo'
+      status: 'todo',
+      notes: newChecklistNotes.trim() ? newChecklistNotes.trim() : undefined
     };
     const updated = [next, ...cannabisChecklist];
     setCannabisChecklist(updated);
     setNewChecklistTitle('');
-    await fetch('http://127.0.0.1:5174/api/v1/streams/cannabis/checklist', {
+    setNewChecklistNotes('');
+    await persistCannabisChecklist(updated);
+  };
+
+  const updateChecklistItem = async (id: string, patch: Partial<ChecklistItem>) => {
+    const updated = cannabisChecklist.map((item) => (item.id === id ? { ...item, ...patch } : item));
+    setCannabisChecklist(updated);
+    await persistCannabisChecklist(updated);
+  };
+
+  const deleteChecklistItem = async (id: string) => {
+    const updated = cannabisChecklist.filter((item) => item.id !== id);
+    setCannabisChecklist(updated);
+    await persistCannabisChecklist(updated);
+  };
+
+  const persistJobApplications = async (nextItems: JobApplication[]) => {
+    await fetch('http://127.0.0.1:5174/api/v1/streams/job-search/applications', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ items: updated })
+      body: JSON.stringify({ items: nextItems })
     });
   };
 
@@ -403,16 +442,39 @@ export function App() {
       id: crypto.randomUUID(),
       company: newAppCompany.trim(),
       role: newAppRole.trim(),
-      status: 'draft'
+      link: newAppLink.trim() ? newAppLink.trim() : undefined,
+      status: newAppStatus,
+      followUpDate: newAppFollowUpDate.trim() ? newAppFollowUpDate.trim() : undefined,
+      resume: newAppResume.trim() ? newAppResume.trim() : undefined
     };
     const updated = [next, ...jobApplications];
     setJobApplications(updated);
     setNewAppCompany('');
     setNewAppRole('');
-    await fetch('http://127.0.0.1:5174/api/v1/streams/job-search/applications', {
+    setNewAppLink('');
+    setNewAppStatus('draft');
+    setNewAppFollowUpDate('');
+    setNewAppResume('');
+    await persistJobApplications(updated);
+  };
+
+  const updateJobApplication = async (id: string, patch: Partial<JobApplication>) => {
+    const updated = jobApplications.map((app) => (app.id === id ? { ...app, ...patch } : app));
+    setJobApplications(updated);
+    await persistJobApplications(updated);
+  };
+
+  const deleteJobApplication = async (id: string) => {
+    const updated = jobApplications.filter((app) => app.id !== id);
+    setJobApplications(updated);
+    await persistJobApplications(updated);
+  };
+
+  const persistMarketingCampaigns = async (nextItems: Campaign[]) => {
+    await fetch('http://127.0.0.1:5174/api/v1/streams/marketing/campaigns', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ items: updated })
+      body: JSON.stringify({ items: nextItems })
     });
   };
 
@@ -421,16 +483,33 @@ export function App() {
     const next: Campaign = {
       id: crypto.randomUUID(),
       name: newCampaignName.trim(),
-      status: 'idea'
+      status: newCampaignStatus,
+      hypothesis: newCampaignHypothesis.trim() ? newCampaignHypothesis.trim() : undefined,
+      metric: newCampaignMetric.trim() ? newCampaignMetric.trim() : undefined,
+      result: newCampaignResult.trim() ? newCampaignResult.trim() : undefined,
+      date: newCampaignDate.trim() ? newCampaignDate.trim() : undefined
     };
     const updated = [next, ...marketingCampaigns];
     setMarketingCampaigns(updated);
     setNewCampaignName('');
-    await fetch('http://127.0.0.1:5174/api/v1/streams/marketing/campaigns', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ items: updated })
-    });
+    setNewCampaignStatus('idea');
+    setNewCampaignHypothesis('');
+    setNewCampaignMetric('');
+    setNewCampaignResult('');
+    setNewCampaignDate('');
+    await persistMarketingCampaigns(updated);
+  };
+
+  const updateCampaign = async (id: string, patch: Partial<Campaign>) => {
+    const updated = marketingCampaigns.map((campaign) => (campaign.id === id ? { ...campaign, ...patch } : campaign));
+    setMarketingCampaigns(updated);
+    await persistMarketingCampaigns(updated);
+  };
+
+  const deleteCampaign = async (id: string) => {
+    const updated = marketingCampaigns.filter((campaign) => campaign.id !== id);
+    setMarketingCampaigns(updated);
+    await persistMarketingCampaigns(updated);
   };
 
   const handleApplySavedFilter = (filter: SavedFilter) => {
@@ -654,18 +733,47 @@ export function App() {
                     value={newChecklistTitle}
                     onChange={(event) => setNewChecklistTitle(event.target.value)}
                   />
+                  <input
+                    placeholder="Notes"
+                    value={newChecklistNotes}
+                    onChange={(event) => setNewChecklistNotes(event.target.value)}
+                  />
                   <button type="button" className="ghost" onClick={addChecklistItem}>
                     Add
                   </button>
                 </div>
-                <ul>
-                  {cannabisChecklist.slice(0, 5).map((item) => (
-                    <li key={item.id}>
-                      {item.title} • {item.status}
-                    </li>
-                  ))}
-                </ul>
+                {cannabisChecklist.length === 0 ? (
+                  <p className="empty-state">No checklist items yet.</p>
+                ) : (
+                  <ul className="stream-list">
+                    {cannabisChecklist.map((item) => (
+                      <li key={item.id} className="stream-row">
+                        <input
+                          value={item.title}
+                          onChange={(event) => updateChecklistItem(item.id, { title: event.target.value })}
+                        />
+                        <select
+                          value={item.status}
+                          onChange={(event) => updateChecklistItem(item.id, { status: event.target.value as ChecklistItem['status'] })}
+                        >
+                          <option value="todo">todo</option>
+                          <option value="in_progress">in_progress</option>
+                          <option value="done">done</option>
+                        </select>
+                        <input
+                          value={item.notes ?? ''}
+                          placeholder="notes"
+                          onChange={(event) => updateChecklistItem(item.id, { notes: event.target.value || undefined })}
+                        />
+                        <button type="button" className="ghost" onClick={() => deleteChecklistItem(item.id)}>
+                          Delete
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
+
               <div className="stream-card">
                 <h3>Job applications</h3>
                 <div className="stream-form">
@@ -674,23 +782,71 @@ export function App() {
                     value={newAppCompany}
                     onChange={(event) => setNewAppCompany(event.target.value)}
                   />
+                  <input placeholder="Role" value={newAppRole} onChange={(event) => setNewAppRole(event.target.value)} />
+                  <input placeholder="Link" value={newAppLink} onChange={(event) => setNewAppLink(event.target.value)} />
+                  <select value={newAppStatus} onChange={(event) => setNewAppStatus(event.target.value as JobApplication['status'])}>
+                    <option value="draft">draft</option>
+                    <option value="applied">applied</option>
+                    <option value="interview">interview</option>
+                    <option value="offer">offer</option>
+                    <option value="rejected">rejected</option>
+                  </select>
                   <input
-                    placeholder="Role"
-                    value={newAppRole}
-                    onChange={(event) => setNewAppRole(event.target.value)}
+                    type="date"
+                    value={newAppFollowUpDate}
+                    onChange={(event) => setNewAppFollowUpDate(event.target.value)}
+                  />
+                  <input
+                    placeholder="Resume version"
+                    value={newAppResume}
+                    onChange={(event) => setNewAppResume(event.target.value)}
                   />
                   <button type="button" className="ghost" onClick={addJobApplication}>
                     Add
                   </button>
                 </div>
-                <ul>
-                  {jobApplications.slice(0, 5).map((app) => (
-                    <li key={app.id}>
-                      {app.company} — {app.role} • {app.status}
-                    </li>
-                  ))}
-                </ul>
+                {jobApplications.length === 0 ? (
+                  <p className="empty-state">No applications yet.</p>
+                ) : (
+                  <ul className="stream-list">
+                    {jobApplications.map((app) => (
+                      <li key={app.id} className="stream-row">
+                        <input value={app.company} onChange={(event) => updateJobApplication(app.id, { company: event.target.value })} />
+                        <input value={app.role} onChange={(event) => updateJobApplication(app.id, { role: event.target.value })} />
+                        <input
+                          value={app.link ?? ''}
+                          placeholder="link"
+                          onChange={(event) => updateJobApplication(app.id, { link: event.target.value || undefined })}
+                        />
+                        <select
+                          value={app.status}
+                          onChange={(event) => updateJobApplication(app.id, { status: event.target.value as JobApplication['status'] })}
+                        >
+                          <option value="draft">draft</option>
+                          <option value="applied">applied</option>
+                          <option value="interview">interview</option>
+                          <option value="offer">offer</option>
+                          <option value="rejected">rejected</option>
+                        </select>
+                        <input
+                          type="date"
+                          value={app.followUpDate ?? ''}
+                          onChange={(event) => updateJobApplication(app.id, { followUpDate: event.target.value || undefined })}
+                        />
+                        <input
+                          value={app.resume ?? ''}
+                          placeholder="resume"
+                          onChange={(event) => updateJobApplication(app.id, { resume: event.target.value || undefined })}
+                        />
+                        <button type="button" className="ghost" onClick={() => deleteJobApplication(app.id)}>
+                          Delete
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
+
               <div className="stream-card">
                 <h3>Marketing campaigns</h3>
                 <div className="stream-form">
@@ -699,17 +855,81 @@ export function App() {
                     value={newCampaignName}
                     onChange={(event) => setNewCampaignName(event.target.value)}
                   />
+                  <select
+                    value={newCampaignStatus}
+                    onChange={(event) => setNewCampaignStatus(event.target.value as Campaign['status'])}
+                  >
+                    <option value="idea">idea</option>
+                    <option value="draft">draft</option>
+                    <option value="published">published</option>
+                    <option value="measured">measured</option>
+                  </select>
+                  <input
+                    placeholder="Hypothesis"
+                    value={newCampaignHypothesis}
+                    onChange={(event) => setNewCampaignHypothesis(event.target.value)}
+                  />
+                  <input
+                    placeholder="Metric"
+                    value={newCampaignMetric}
+                    onChange={(event) => setNewCampaignMetric(event.target.value)}
+                  />
+                  <input
+                    placeholder="Result"
+                    value={newCampaignResult}
+                    onChange={(event) => setNewCampaignResult(event.target.value)}
+                  />
+                  <input type="date" value={newCampaignDate} onChange={(event) => setNewCampaignDate(event.target.value)} />
                   <button type="button" className="ghost" onClick={addCampaign}>
                     Add
                   </button>
                 </div>
-                <ul>
-                  {marketingCampaigns.slice(0, 5).map((campaign) => (
-                    <li key={campaign.id}>
-                      {campaign.name} • {campaign.status}
-                    </li>
-                  ))}
-                </ul>
+                {marketingCampaigns.length === 0 ? (
+                  <p className="empty-state">No campaigns yet.</p>
+                ) : (
+                  <ul className="stream-list">
+                    {marketingCampaigns.map((campaign) => (
+                      <li key={campaign.id} className="stream-row">
+                        <input
+                          value={campaign.name}
+                          onChange={(event) => updateCampaign(campaign.id, { name: event.target.value })}
+                        />
+                        <select
+                          value={campaign.status}
+                          onChange={(event) => updateCampaign(campaign.id, { status: event.target.value as Campaign['status'] })}
+                        >
+                          <option value="idea">idea</option>
+                          <option value="draft">draft</option>
+                          <option value="published">published</option>
+                          <option value="measured">measured</option>
+                        </select>
+                        <input
+                          value={campaign.hypothesis ?? ''}
+                          placeholder="hypothesis"
+                          onChange={(event) => updateCampaign(campaign.id, { hypothesis: event.target.value || undefined })}
+                        />
+                        <input
+                          value={campaign.metric ?? ''}
+                          placeholder="metric"
+                          onChange={(event) => updateCampaign(campaign.id, { metric: event.target.value || undefined })}
+                        />
+                        <input
+                          value={campaign.result ?? ''}
+                          placeholder="result"
+                          onChange={(event) => updateCampaign(campaign.id, { result: event.target.value || undefined })}
+                        />
+                        <input
+                          type="date"
+                          value={campaign.date ?? ''}
+                          onChange={(event) => updateCampaign(campaign.id, { date: event.target.value || undefined })}
+                        />
+                        <button type="button" className="ghost" onClick={() => deleteCampaign(campaign.id)}>
+                          Delete
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           </section>

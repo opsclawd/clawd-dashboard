@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { EventSchema, redactObject, redactString } from '../domain';
 import type { Event } from '../domain';
 
@@ -32,7 +33,7 @@ export class EventService {
     this.repository = repository;
   }
 
-  listEvents(filters: EventFilters, useIndex = false) {
+  listEvents(filters: EventFilters) {
     let items = this.repository.readAll();
     if (filters.stream) items = items.filter((event) => event.stream === filters.stream);
     if (filters.type) items = items.filter((event) => event.type === filters.type);
@@ -75,15 +76,13 @@ export class EventService {
 }
 
 const computeEventHash = (event: Event) => {
-  const { hash, ...rest } = event;
-  const canonical = stableStringify(rest);
+  const canonicalPayload: Record<string, unknown> = { ...event };
+  delete canonicalPayload.hash;
+  const canonical = stableStringify(canonicalPayload);
   return sha256(`${event.prevHash ?? ''}${canonical}`);
 };
 
-const sha256 = (value: string) => {
-  const crypto = require('node:crypto') as typeof import('node:crypto');
-  return crypto.createHash('sha256').update(value).digest('hex');
-};
+const sha256 = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
 
 const stableStringify = (input: unknown): string => {
   if (input === null || typeof input !== 'object') return JSON.stringify(input);

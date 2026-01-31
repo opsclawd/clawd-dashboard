@@ -9,6 +9,7 @@ export const registerStreamRoutes = (fastify: FastifyInstance, service: StreamSe
     service.saveCannabisChecklist(body.items ?? []);
     return { ok: true };
   });
+  fastify.get('/api/v1/streams/cannabis/checklist/export', async () => ({ items: service.listCannabisChecklist() }));
 
   // Job applications
   fastify.get('/api/v1/streams/job-search/applications', async () => ({ items: service.listJobApplications() }));
@@ -17,6 +18,7 @@ export const registerStreamRoutes = (fastify: FastifyInstance, service: StreamSe
     service.saveJobApplications(body.items ?? []);
     return { ok: true };
   });
+  fastify.get('/api/v1/streams/job-search/applications/export', async () => ({ items: service.listJobApplications() }));
 
   // Marketing campaigns
   fastify.get('/api/v1/streams/marketing/campaigns', async () => ({ items: service.listMarketingCampaigns() }));
@@ -25,4 +27,5 @@ export const registerStreamRoutes = (fastify: FastifyInstance, service: StreamSe
     service.saveMarketingCampaigns(body.items ?? []);
     return { ok: true };
   });
+  fastify.get('/api/v1/streams/marketing/campaigns/export', async () => ({ items: service.listMarketingCampaigns() }));
 };

@@ -503,15 +503,15 @@ export function App() {
             className="ghost"
             onClick={async () => {
               try {
-                const res = await fetch('http://127.0.0.1:5174/api/v1/digest/daily');
+                const res = await fetch('http://127.0.0.1:5174/api/v1/integrity/check');
                 const data = await res.json();
-                console.log('Digest', data);
+                console.log('Integrity', data);
               } catch {
                 // ignore
               }
             }}
           >
-            Test digest
+            Verify log
           </button>
         </div>
 

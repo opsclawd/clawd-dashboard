@@ -10,6 +10,7 @@ import { registerHealthRoute } from './routes/health';
 import { registerIndexerRoutes } from './routes/indexer';
 import { registerSavedFilterRoutes } from './routes/saved-filters';
 import { registerAutomationRoutes } from './routes/automation';
+import { registerIntegrityRoutes } from './routes/integrity';
 import { registerStreamRoutes } from './routes/streams';
 import { registerTaskRoutes } from './routes/tasks';
 
@@ -36,4 +37,5 @@ export const registerRoutes = (
   registerIndexerRoutes(fastify, deps.indexService);
   registerStreamRoutes(fastify, deps.streamService);
   registerAutomationRoutes(fastify, deps.digestService, deps.reminderService);
+  registerIntegrityRoutes(fastify, process.cwd());
 };

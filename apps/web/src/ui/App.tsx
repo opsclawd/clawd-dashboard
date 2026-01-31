@@ -900,6 +900,71 @@ export function App() {
           </a>
         </div>
 
+        <section className="panel today-panel">
+          <div className="panel-header">
+            <div>
+              <h2>Today</h2>
+              <p className="panel-subtitle">What’s active, what’s due, and what’s healthy.</p>
+            </div>
+          </div>
+
+          <div className="today-grid">
+            <div className="today-card">
+              <h3>Tasks</h3>
+              <ul className="today-list">
+                <li>
+                  <strong>In progress:</strong> {tasksByStatus.in_progress.length}
+                </li>
+                <li>
+                  <strong>Next:</strong> {tasksByStatus.next.length}
+                </li>
+                <li>
+                  <strong>Blocked:</strong> {tasksByStatus.blocked.length}
+                </li>
+              </ul>
+            </div>
+
+            <div className="today-card">
+              <h3>Job follow-ups</h3>
+              <ul className="today-list">
+                <li>
+                  <strong>Overdue:</strong> {jobFollowUpBuckets.overdue.length}
+                </li>
+                <li>
+                  <strong>Due soon (7d):</strong> {jobFollowUpBuckets.dueSoon.length}
+                </li>
+                <li>
+                  <strong>No date:</strong> {jobFollowUpBuckets.none.length}
+                </li>
+              </ul>
+            </div>
+
+            <div className="today-card">
+              <h3>Cannabis checklist</h3>
+              <ul className="today-list">
+                <li>
+                  <strong>Todo:</strong> {checklistBuckets.todo.length}
+                </li>
+                <li>
+                  <strong>In progress:</strong> {checklistBuckets.inProgress.length}
+                </li>
+              </ul>
+            </div>
+
+            <div className="today-card">
+              <h3>Marketing</h3>
+              <ul className="today-list">
+                <li>
+                  <strong>Draft:</strong> {campaignBuckets.draft.length}
+                </li>
+                <li>
+                  <strong>Needs measurement:</strong> {campaignBuckets.needsMeasurement.length}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
         <main className="panels-grid">
           <section className="panel tasks-panel">
             <div className="panel-header">

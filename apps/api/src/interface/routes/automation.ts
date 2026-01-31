@@ -10,6 +10,8 @@ export const registerAutomationRoutes = (
 ) => {
   fastify.get('/api/v1/digest/daily', async () => ({ ok: true, digest: digestService.daily() }));
 
+  // NOTE: delivery endpoint intentionally omitted (use cron/message tool externally)
+
   fastify.get('/api/v1/reminders', async () => ({ items: reminderService.list() }));
 
   fastify.post('/api/v1/reminders', async (req, res) => {

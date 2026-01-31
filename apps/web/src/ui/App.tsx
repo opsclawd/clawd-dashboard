@@ -51,6 +51,8 @@ type ChecklistItem = {
   title: string;
   status: 'todo' | 'in_progress' | 'done';
   notes?: string;
+  taskId?: string;
+  archivedAt?: string;
 };
 
 type JobApplication = {
@@ -62,6 +64,7 @@ type JobApplication = {
   followUpDate?: string;
   resume?: string;
   taskId?: string;
+  archivedAt?: string;
 };
 
 type Campaign = {
@@ -72,6 +75,9 @@ type Campaign = {
   metric?: string;
   result?: string;
   date?: string;
+  taskId?: string;
+  nextStep?: string;
+  archivedAt?: string;
 };
 
 type SavedFilter = {
@@ -159,6 +165,19 @@ const formatDetailValue = (value: unknown) => {
   return String(value);
 };
 
+const formatDayKey = (value: Date) => {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const addDays = (value: Date, days: number) => {
+  const next = new Date(value);
+  next.setDate(next.getDate() + days);
+  return next;
+};
+
 type CommitPreview = {
   sha: string;
   message: string;
@@ -244,6 +263,9 @@ export function App() {
 
   const [newChecklistTitle, setNewChecklistTitle] = useState('');
   const [newChecklistNotes, setNewChecklistNotes] = useState('');
+  const [newChecklistTaskId, setNewChecklistTaskId] = useState('');
+  const [showArchivedChecklist, setShowArchivedChecklist] = useState(false);
+  const [showDoneChecklist, setShowDoneChecklist] = useState(false);
 
   const [newAppCompany, setNewAppCompany] = useState('');
   const [newAppRole, setNewAppRole] = useState('');
@@ -253,12 +275,17 @@ export function App() {
   const [newAppResume, setNewAppResume] = useState('');
   const [newAppTaskId, setNewAppTaskId] = useState('');
 
+  const [showArchivedJobApps, setShowArchivedJobApps] = useState(false);
+
   const [newCampaignName, setNewCampaignName] = useState('');
   const [newCampaignStatus, setNewCampaignStatus] = useState<Campaign['status']>('idea');
   const [newCampaignHypothesis, setNewCampaignHypothesis] = useState('');
   const [newCampaignMetric, setNewCampaignMetric] = useState('');
   const [newCampaignResult, setNewCampaignResult] = useState('');
   const [newCampaignDate, setNewCampaignDate] = useState('');
+  const [newCampaignTaskId, setNewCampaignTaskId] = useState('');
+  const [newCampaignNextStep, setNewCampaignNextStep] = useState('');
+  const [showArchivedCampaigns, setShowArchivedCampaigns] = useState(false);
   const [integrityStatus, setIntegrityStatus] = useState<'ok' | 'fail' | 'unknown'>('unknown');
   const [integrityMessage, setIntegrityMessage] = useState('');
 
@@ -448,12 +475,14 @@ export function App() {
       id: crypto.randomUUID(),
       title: newChecklistTitle.trim(),
       status: 'todo',
-      notes: newChecklistNotes.trim() ? newChecklistNotes.trim() : undefined
+      notes: newChecklistNotes.trim() ? newChecklistNotes.trim() : undefined,
+      taskId: newChecklistTaskId.trim() ? newChecklistTaskId.trim() : undefined
     };
     const updated = [next, ...cannabisChecklist];
     setCannabisChecklist(updated);
     setNewChecklistTitle('');
     setNewChecklistNotes('');
+    setNewChecklistTaskId('');
     await persistCannabisChecklist(updated);
   };
 
@@ -513,6 +542,58 @@ export function App() {
     await persistJobApplications(updated);
   };
 
+  const renderJobAppRow = (app: JobApplication) => (
+    <li key={app.id} className="job-row">
+      <input value={app.company} onChange={(event) => updateJobApplication(app.id, { company: event.target.value })} />
+      <input value={app.role} onChange={(event) => updateJobApplication(app.id, { role: event.target.value })} />
+      <input
+        value={app.link ?? ''}
+        placeholder="link"
+        onChange={(event) => updateJobApplication(app.id, { link: event.target.value || undefined })}
+      />
+      <select
+        value={app.status}
+        onChange={(event) => updateJobApplication(app.id, { status: event.target.value as JobApplication['status'] })}
+      >
+        <option value="draft">draft</option>
+        <option value="applied">applied</option>
+        <option value="interview">interview</option>
+        <option value="offer">offer</option>
+        <option value="rejected">rejected</option>
+      </select>
+      <input
+        type="date"
+        value={app.followUpDate ?? ''}
+        onChange={(event) => updateJobApplication(app.id, { followUpDate: event.target.value || undefined })}
+      />
+      <input
+        value={app.resume ?? ''}
+        placeholder="resume"
+        onChange={(event) => updateJobApplication(app.id, { resume: event.target.value || undefined })}
+      />
+      <select value={app.taskId ?? ''} onChange={(event) => updateJobApplication(app.id, { taskId: event.target.value || undefined })}>
+        <option value="">No task</option>
+        {tasks.map((task) => (
+          <option key={task.id} value={task.id}>
+            {task.title}
+          </option>
+        ))}
+      </select>
+      <div className="job-row-actions">
+        <button
+          type="button"
+          className="ghost"
+          onClick={() => updateJobApplication(app.id, { archivedAt: app.archivedAt ? undefined : new Date().toISOString() })}
+        >
+          {app.archivedAt ? 'Unarchive' : 'Archive'}
+        </button>
+        <button type="button" className="ghost" onClick={() => deleteJobApplication(app.id)}>
+          Delete
+        </button>
+      </div>
+    </li>
+  );
+
   const persistMarketingCampaigns = async (nextItems: Campaign[]) => {
     await fetch('http://127.0.0.1:5174/api/v1/streams/marketing/campaigns', {
       method: 'POST',
@@ -530,7 +611,9 @@ export function App() {
       hypothesis: newCampaignHypothesis.trim() ? newCampaignHypothesis.trim() : undefined,
       metric: newCampaignMetric.trim() ? newCampaignMetric.trim() : undefined,
       result: newCampaignResult.trim() ? newCampaignResult.trim() : undefined,
-      date: newCampaignDate.trim() ? newCampaignDate.trim() : undefined
+      date: newCampaignDate.trim() ? newCampaignDate.trim() : undefined,
+      taskId: newCampaignTaskId.trim() ? newCampaignTaskId.trim() : undefined,
+      nextStep: newCampaignNextStep.trim() ? newCampaignNextStep.trim() : undefined
     };
     const updated = [next, ...marketingCampaigns];
     setMarketingCampaigns(updated);
@@ -540,6 +623,8 @@ export function App() {
     setNewCampaignMetric('');
     setNewCampaignResult('');
     setNewCampaignDate('');
+    setNewCampaignTaskId('');
+    setNewCampaignNextStep('');
     await persistMarketingCampaigns(updated);
   };
 
@@ -582,6 +667,84 @@ export function App() {
     });
     return mapped;
   }, [tasks]);
+
+  const jobAppsActive = useMemo(
+    () => (showArchivedJobApps ? jobApplications : jobApplications.filter((app) => !app.archivedAt)),
+    [jobApplications, showArchivedJobApps]
+  );
+
+  const jobFollowUpBuckets = useMemo(() => {
+    const today = new Date();
+    const todayKey = formatDayKey(today);
+    const dueSoonKey = formatDayKey(addDays(today, 7));
+
+    const overdue: JobApplication[] = [];
+    const dueSoon: JobApplication[] = [];
+    const none: JobApplication[] = [];
+
+    jobAppsActive.forEach((app) => {
+      if (!app.followUpDate) {
+        none.push(app);
+        return;
+      }
+      if (app.followUpDate < todayKey) {
+        overdue.push(app);
+        return;
+      }
+      if (app.followUpDate <= dueSoonKey) {
+        dueSoon.push(app);
+        return;
+      }
+    });
+
+    const byDate = (a: JobApplication, b: JobApplication) => (a.followUpDate ?? '').localeCompare(b.followUpDate ?? '');
+    overdue.sort(byDate);
+    dueSoon.sort(byDate);
+
+    return { todayKey, dueSoonKey, overdue, dueSoon, none };
+  }, [jobAppsActive]);
+
+  const checklistActive = useMemo(() => {
+    const base = showArchivedChecklist ? cannabisChecklist : cannabisChecklist.filter((item) => !item.archivedAt);
+    return showDoneChecklist ? base : base.filter((item) => item.status !== 'done');
+  }, [cannabisChecklist, showArchivedChecklist, showDoneChecklist]);
+
+  const checklistBuckets = useMemo(() => {
+    const todo: ChecklistItem[] = [];
+    const inProgress: ChecklistItem[] = [];
+    const done: ChecklistItem[] = [];
+
+    checklistActive.forEach((item) => {
+      if (item.status === 'todo') todo.push(item);
+      else if (item.status === 'in_progress') inProgress.push(item);
+      else done.push(item);
+    });
+
+    return { todo, inProgress, done };
+  }, [checklistActive]);
+
+  const campaignsActive = useMemo(
+    () => (showArchivedCampaigns ? marketingCampaigns : marketingCampaigns.filter((c) => !c.archivedAt)),
+    [marketingCampaigns, showArchivedCampaigns]
+  );
+
+  const campaignBuckets = useMemo(() => {
+    const draft: Campaign[] = [];
+    const published: Campaign[] = [];
+    const measured: Campaign[] = [];
+    const needsMeasurement: Campaign[] = [];
+
+    campaignsActive.forEach((campaign) => {
+      if (campaign.status === 'draft') draft.push(campaign);
+      if (campaign.status === 'published') published.push(campaign);
+      if (campaign.status === 'measured') measured.push(campaign);
+      if (campaign.status === 'published' && (!campaign.metric || !campaign.result)) {
+        needsMeasurement.push(campaign);
+      }
+    });
+
+    return { draft, published, measured, needsMeasurement };
+  }, [campaignsActive]);
 
   const filteredEvents = useMemo(() => {
     const query = eventSearch.trim().toLowerCase();
@@ -737,6 +900,71 @@ export function App() {
           </a>
         </div>
 
+        <section className="panel today-panel">
+          <div className="panel-header">
+            <div>
+              <h2>Today</h2>
+              <p className="panel-subtitle">What’s active, what’s due, and what’s healthy.</p>
+            </div>
+          </div>
+
+          <div className="today-grid">
+            <div className="today-card">
+              <h3>Tasks</h3>
+              <ul className="today-list">
+                <li>
+                  <strong>In progress:</strong> {tasksByStatus.in_progress.length}
+                </li>
+                <li>
+                  <strong>Next:</strong> {tasksByStatus.next.length}
+                </li>
+                <li>
+                  <strong>Blocked:</strong> {tasksByStatus.blocked.length}
+                </li>
+              </ul>
+            </div>
+
+            <div className="today-card">
+              <h3>Job follow-ups</h3>
+              <ul className="today-list">
+                <li>
+                  <strong>Overdue:</strong> {jobFollowUpBuckets.overdue.length}
+                </li>
+                <li>
+                  <strong>Due soon (7d):</strong> {jobFollowUpBuckets.dueSoon.length}
+                </li>
+                <li>
+                  <strong>No date:</strong> {jobFollowUpBuckets.none.length}
+                </li>
+              </ul>
+            </div>
+
+            <div className="today-card">
+              <h3>Cannabis checklist</h3>
+              <ul className="today-list">
+                <li>
+                  <strong>Todo:</strong> {checklistBuckets.todo.length}
+                </li>
+                <li>
+                  <strong>In progress:</strong> {checklistBuckets.inProgress.length}
+                </li>
+              </ul>
+            </div>
+
+            <div className="today-card">
+              <h3>Marketing</h3>
+              <ul className="today-list">
+                <li>
+                  <strong>Draft:</strong> {campaignBuckets.draft.length}
+                </li>
+                <li>
+                  <strong>Needs measurement:</strong> {campaignBuckets.needsMeasurement.length}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
         <main className="panels-grid">
           <section className="panel tasks-panel">
             <div className="panel-header">
@@ -845,44 +1073,211 @@ export function App() {
                     value={newChecklistTitle}
                     onChange={(event) => setNewChecklistTitle(event.target.value)}
                   />
-                  <input
-                    placeholder="Notes"
-                    value={newChecklistNotes}
-                    onChange={(event) => setNewChecklistNotes(event.target.value)}
-                  />
+                  <input placeholder="Notes" value={newChecklistNotes} onChange={(event) => setNewChecklistNotes(event.target.value)} />
+                  <select value={newChecklistTaskId} onChange={(event) => setNewChecklistTaskId(event.target.value)}>
+                    <option value="">No task</option>
+                    {tasks.map((task) => (
+                      <option key={task.id} value={task.id}>
+                        {task.title}
+                      </option>
+                    ))}
+                  </select>
                   <button type="button" className="ghost" onClick={addChecklistItem}>
                     Add
                   </button>
                 </div>
-                {cannabisChecklist.length === 0 ? (
+
+                <div className="followup-summary">
+                  <div className="followup-bucket">
+                    <strong>Todo</strong>
+                    <span>{checklistBuckets.todo.length}</span>
+                  </div>
+                  <div className="followup-bucket">
+                    <strong>In progress</strong>
+                    <span>{checklistBuckets.inProgress.length}</span>
+                  </div>
+                  <div className="followup-bucket">
+                    <strong>Done</strong>
+                    <span>{checklistBuckets.done.length}</span>
+                  </div>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={showDoneChecklist}
+                      onChange={(event) => setShowDoneChecklist(event.target.checked)}
+                    />
+                    <span>show done</span>
+                  </label>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={showArchivedChecklist}
+                      onChange={(event) => setShowArchivedChecklist(event.target.checked)}
+                    />
+                    <span>show archived</span>
+                  </label>
+                </div>
+
+                {checklistActive.length === 0 ? (
                   <p className="empty-state">No checklist items yet.</p>
                 ) : (
-                  <ul className="stream-list">
-                    {cannabisChecklist.map((item) => (
-                      <li key={item.id} className="checklist-row">
-                        <input
-                          value={item.title}
-                          onChange={(event) => updateChecklistItem(item.id, { title: event.target.value })}
-                        />
-                        <select
-                          value={item.status}
-                          onChange={(event) => updateChecklistItem(item.id, { status: event.target.value as ChecklistItem['status'] })}
-                        >
-                          <option value="todo">todo</option>
-                          <option value="in_progress">in_progress</option>
-                          <option value="done">done</option>
-                        </select>
-                        <input
-                          value={item.notes ?? ''}
-                          placeholder="notes"
-                          onChange={(event) => updateChecklistItem(item.id, { notes: event.target.value || undefined })}
-                        />
-                        <button type="button" className="ghost" onClick={() => deleteChecklistItem(item.id)}>
-                          Delete
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <div className="followup-section">
+                      <h4>Todo</h4>
+                      {checklistBuckets.todo.length === 0 ? (
+                        <p className="empty-state">None.</p>
+                      ) : (
+                        <ul className="stream-list">
+                          {checklistBuckets.todo.map((item) => (
+                            <li key={item.id} className="checklist-row">
+                              <input value={item.title} onChange={(event) => updateChecklistItem(item.id, { title: event.target.value })} />
+                              <select
+                                value={item.status}
+                                onChange={(event) => updateChecklistItem(item.id, { status: event.target.value as ChecklistItem['status'] })}
+                              >
+                                <option value="todo">todo</option>
+                                <option value="in_progress">in_progress</option>
+                                <option value="done">done</option>
+                              </select>
+                              <input
+                                value={item.notes ?? ''}
+                                placeholder="notes"
+                                onChange={(event) => updateChecklistItem(item.id, { notes: event.target.value || undefined })}
+                              />
+                              <select
+                                value={item.taskId ?? ''}
+                                onChange={(event) => updateChecklistItem(item.id, { taskId: event.target.value || undefined })}
+                              >
+                                <option value="">No task</option>
+                                {tasks.map((task) => (
+                                  <option key={task.id} value={task.id}>
+                                    {task.title}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="row-actions">
+                                <button
+                                  type="button"
+                                  className="ghost"
+                                  onClick={() => updateChecklistItem(item.id, { archivedAt: item.archivedAt ? undefined : new Date().toISOString() })}
+                                >
+                                  {item.archivedAt ? 'Unarchive' : 'Archive'}
+                                </button>
+                                <button type="button" className="ghost" onClick={() => deleteChecklistItem(item.id)}>
+                                  Delete
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="followup-section">
+                      <h4>In progress</h4>
+                      {checklistBuckets.inProgress.length === 0 ? (
+                        <p className="empty-state">None.</p>
+                      ) : (
+                        <ul className="stream-list">
+                          {checklistBuckets.inProgress.map((item) => (
+                            <li key={item.id} className="checklist-row">
+                              <input value={item.title} onChange={(event) => updateChecklistItem(item.id, { title: event.target.value })} />
+                              <select
+                                value={item.status}
+                                onChange={(event) => updateChecklistItem(item.id, { status: event.target.value as ChecklistItem['status'] })}
+                              >
+                                <option value="todo">todo</option>
+                                <option value="in_progress">in_progress</option>
+                                <option value="done">done</option>
+                              </select>
+                              <input
+                                value={item.notes ?? ''}
+                                placeholder="notes"
+                                onChange={(event) => updateChecklistItem(item.id, { notes: event.target.value || undefined })}
+                              />
+                              <select
+                                value={item.taskId ?? ''}
+                                onChange={(event) => updateChecklistItem(item.id, { taskId: event.target.value || undefined })}
+                              >
+                                <option value="">No task</option>
+                                {tasks.map((task) => (
+                                  <option key={task.id} value={task.id}>
+                                    {task.title}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="row-actions">
+                                <button
+                                  type="button"
+                                  className="ghost"
+                                  onClick={() => updateChecklistItem(item.id, { status: 'done' })}
+                                >
+                                  Mark done
+                                </button>
+                                <button
+                                  type="button"
+                                  className="ghost"
+                                  onClick={() => updateChecklistItem(item.id, { archivedAt: item.archivedAt ? undefined : new Date().toISOString() })}
+                                >
+                                  {item.archivedAt ? 'Unarchive' : 'Archive'}
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    {showDoneChecklist && (
+                      <div className="followup-section">
+                        <h4>Done</h4>
+                        {checklistBuckets.done.length === 0 ? (
+                          <p className="empty-state">None.</p>
+                        ) : (
+                          <ul className="stream-list">
+                            {checklistBuckets.done.map((item) => (
+                              <li key={item.id} className="checklist-row">
+                                <input value={item.title} onChange={(event) => updateChecklistItem(item.id, { title: event.target.value })} />
+                                <select
+                                  value={item.status}
+                                  onChange={(event) => updateChecklistItem(item.id, { status: event.target.value as ChecklistItem['status'] })}
+                                >
+                                  <option value="todo">todo</option>
+                                  <option value="in_progress">in_progress</option>
+                                  <option value="done">done</option>
+                                </select>
+                                <input
+                                  value={item.notes ?? ''}
+                                  placeholder="notes"
+                                  onChange={(event) => updateChecklistItem(item.id, { notes: event.target.value || undefined })}
+                                />
+                                <select
+                                  value={item.taskId ?? ''}
+                                  onChange={(event) => updateChecklistItem(item.id, { taskId: event.target.value || undefined })}
+                                >
+                                  <option value="">No task</option>
+                                  {tasks.map((task) => (
+                                    <option key={task.id} value={task.id}>
+                                      {task.title}
+                                    </option>
+                                  ))}
+                                </select>
+                                <div className="row-actions">
+                                  <button
+                                    type="button"
+                                    className="ghost"
+                                    onClick={() => updateChecklistItem(item.id, { archivedAt: item.archivedAt ? undefined : new Date().toISOString() })}
+                                  >
+                                    {item.archivedAt ? 'Unarchive' : 'Archive'}
+                                  </button>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -903,11 +1298,7 @@ export function App() {
                     <option value="offer">offer</option>
                     <option value="rejected">rejected</option>
                   </select>
-                  <input
-                    type="date"
-                    value={newAppFollowUpDate}
-                    onChange={(event) => setNewAppFollowUpDate(event.target.value)}
-                  />
+                  <input type="date" value={newAppFollowUpDate} onChange={(event) => setNewAppFollowUpDate(event.target.value)} />
                   <input
                     placeholder="Resume version"
                     value={newAppResume}
@@ -925,141 +1316,349 @@ export function App() {
                     Add
                   </button>
                 </div>
-                {jobApplications.length === 0 ? (
+
+                <div className="followup-summary">
+                  <div className="followup-bucket">
+                    <strong>Overdue</strong>
+                    <span>{jobFollowUpBuckets.overdue.length}</span>
+                  </div>
+                  <div className="followup-bucket">
+                    <strong>Due soon (7d)</strong>
+                    <span>{jobFollowUpBuckets.dueSoon.length}</span>
+                  </div>
+                  <div className="followup-bucket">
+                    <strong>No date</strong>
+                    <span>{jobFollowUpBuckets.none.length}</span>
+                  </div>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={showArchivedJobApps}
+                      onChange={(event) => setShowArchivedJobApps(event.target.checked)}
+                    />
+                    <span>show archived</span>
+                  </label>
+                </div>
+
+                {jobAppsActive.length === 0 ? (
                   <p className="empty-state">No applications yet.</p>
                 ) : (
-                  <ul className="stream-list">
-                    {jobApplications.map((app) => (
-                      <li key={app.id} className="job-row">
-                        <input value={app.company} onChange={(event) => updateJobApplication(app.id, { company: event.target.value })} />
-                        <input value={app.role} onChange={(event) => updateJobApplication(app.id, { role: event.target.value })} />
-                        <input
-                          value={app.link ?? ''}
-                          placeholder="link"
-                          onChange={(event) => updateJobApplication(app.id, { link: event.target.value || undefined })}
-                        />
-                        <select
-                          value={app.status}
-                          onChange={(event) => updateJobApplication(app.id, { status: event.target.value as JobApplication['status'] })}
-                        >
-                          <option value="draft">draft</option>
-                          <option value="applied">applied</option>
-                          <option value="interview">interview</option>
-                          <option value="offer">offer</option>
-                          <option value="rejected">rejected</option>
-                        </select>
-                        <input
-                          type="date"
-                          value={app.followUpDate ?? ''}
-                          onChange={(event) => updateJobApplication(app.id, { followUpDate: event.target.value || undefined })}
-                        />
-                        <input
-                          value={app.resume ?? ''}
-                          placeholder="resume"
-                          onChange={(event) => updateJobApplication(app.id, { resume: event.target.value || undefined })}
-                        />
-                        <select
-                          value={app.taskId ?? ''}
-                          onChange={(event) => updateJobApplication(app.id, { taskId: event.target.value || undefined })}
-                        >
-                          <option value="">No task</option>
-                          {tasks.map((task) => (
-                            <option key={task.id} value={task.id}>
-                              {task.title}
-                            </option>
-                          ))}
-                        </select>
-                        <button type="button" className="ghost" onClick={() => deleteJobApplication(app.id)}>
-                          Delete
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <div className="followup-section">
+                      <h4>Overdue follow-ups</h4>
+                      {jobFollowUpBuckets.overdue.length === 0 ? (
+                        <p className="empty-state">None.</p>
+                      ) : (
+                        <ul className="stream-list">
+                          {jobFollowUpBuckets.overdue.map(renderJobAppRow)}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="followup-section">
+                      <h4>Due soon (next 7 days)</h4>
+                      {jobFollowUpBuckets.dueSoon.length === 0 ? (
+                        <p className="empty-state">None.</p>
+                      ) : (
+                        <ul className="stream-list">
+                          {jobFollowUpBuckets.dueSoon.map(renderJobAppRow)}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="followup-section">
+                      <h4>No follow-up date</h4>
+                      {jobFollowUpBuckets.none.length === 0 ? (
+                        <p className="empty-state">None.</p>
+                      ) : (
+                        <ul className="stream-list">
+                          {jobFollowUpBuckets.none.map(renderJobAppRow)}
+                        </ul>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
 
               <div className="stream-card">
                 <h3>Marketing campaigns</h3>
                 <div className="stream-form">
-                  <input
-                    placeholder="Campaign"
-                    value={newCampaignName}
-                    onChange={(event) => setNewCampaignName(event.target.value)}
-                  />
-                  <select
-                    value={newCampaignStatus}
-                    onChange={(event) => setNewCampaignStatus(event.target.value as Campaign['status'])}
-                  >
+                  <input placeholder="Campaign" value={newCampaignName} onChange={(event) => setNewCampaignName(event.target.value)} />
+                  <select value={newCampaignStatus} onChange={(event) => setNewCampaignStatus(event.target.value as Campaign['status'])}>
                     <option value="idea">idea</option>
                     <option value="draft">draft</option>
                     <option value="published">published</option>
                     <option value="measured">measured</option>
                   </select>
                   <input
+                    placeholder="Next step"
+                    value={newCampaignNextStep}
+                    onChange={(event) => setNewCampaignNextStep(event.target.value)}
+                  />
+                  <select value={newCampaignTaskId} onChange={(event) => setNewCampaignTaskId(event.target.value)}>
+                    <option value="">No task</option>
+                    {tasks.map((task) => (
+                      <option key={task.id} value={task.id}>
+                        {task.title}
+                      </option>
+                    ))}
+                  </select>
+                  <input
                     placeholder="Hypothesis"
                     value={newCampaignHypothesis}
                     onChange={(event) => setNewCampaignHypothesis(event.target.value)}
                   />
-                  <input
-                    placeholder="Metric"
-                    value={newCampaignMetric}
-                    onChange={(event) => setNewCampaignMetric(event.target.value)}
-                  />
-                  <input
-                    placeholder="Result"
-                    value={newCampaignResult}
-                    onChange={(event) => setNewCampaignResult(event.target.value)}
-                  />
+                  <input placeholder="Metric" value={newCampaignMetric} onChange={(event) => setNewCampaignMetric(event.target.value)} />
+                  <input placeholder="Result" value={newCampaignResult} onChange={(event) => setNewCampaignResult(event.target.value)} />
                   <input type="date" value={newCampaignDate} onChange={(event) => setNewCampaignDate(event.target.value)} />
                   <button type="button" className="ghost" onClick={addCampaign}>
                     Add
                   </button>
                 </div>
-                {marketingCampaigns.length === 0 ? (
+
+                <div className="followup-summary">
+                  <div className="followup-bucket">
+                    <strong>Draft</strong>
+                    <span>{campaignBuckets.draft.length}</span>
+                  </div>
+                  <div className="followup-bucket">
+                    <strong>Published</strong>
+                    <span>{campaignBuckets.published.length}</span>
+                  </div>
+                  <div className="followup-bucket">
+                    <strong>Needs measurement</strong>
+                    <span>{campaignBuckets.needsMeasurement.length}</span>
+                  </div>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={showArchivedCampaigns}
+                      onChange={(event) => setShowArchivedCampaigns(event.target.checked)}
+                    />
+                    <span>show archived</span>
+                  </label>
+                </div>
+
+                {campaignsActive.length === 0 ? (
                   <p className="empty-state">No campaigns yet.</p>
                 ) : (
-                  <ul className="stream-list">
-                    {marketingCampaigns.map((campaign) => (
-                      <li key={campaign.id} className="campaign-row">
-                        <input
-                          value={campaign.name}
-                          onChange={(event) => updateCampaign(campaign.id, { name: event.target.value })}
-                        />
-                        <select
-                          value={campaign.status}
-                          onChange={(event) => updateCampaign(campaign.id, { status: event.target.value as Campaign['status'] })}
-                        >
-                          <option value="idea">idea</option>
-                          <option value="draft">draft</option>
-                          <option value="published">published</option>
-                          <option value="measured">measured</option>
-                        </select>
-                        <input
-                          value={campaign.hypothesis ?? ''}
-                          placeholder="hypothesis"
-                          onChange={(event) => updateCampaign(campaign.id, { hypothesis: event.target.value || undefined })}
-                        />
-                        <input
-                          value={campaign.metric ?? ''}
-                          placeholder="metric"
-                          onChange={(event) => updateCampaign(campaign.id, { metric: event.target.value || undefined })}
-                        />
-                        <input
-                          value={campaign.result ?? ''}
-                          placeholder="result"
-                          onChange={(event) => updateCampaign(campaign.id, { result: event.target.value || undefined })}
-                        />
-                        <input
-                          type="date"
-                          value={campaign.date ?? ''}
-                          onChange={(event) => updateCampaign(campaign.id, { date: event.target.value || undefined })}
-                        />
-                        <button type="button" className="ghost" onClick={() => deleteCampaign(campaign.id)}>
-                          Delete
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <div className="followup-section">
+                      <h4>Needs measurement</h4>
+                      {campaignBuckets.needsMeasurement.length === 0 ? (
+                        <p className="empty-state">None.</p>
+                      ) : (
+                        <ul className="stream-list">
+                          {campaignBuckets.needsMeasurement.map((campaign) => (
+                            <li key={campaign.id} className="campaign-row">
+                              <input value={campaign.name} onChange={(event) => updateCampaign(campaign.id, { name: event.target.value })} />
+                              <select
+                                value={campaign.status}
+                                onChange={(event) => updateCampaign(campaign.id, { status: event.target.value as Campaign['status'] })}
+                              >
+                                <option value="idea">idea</option>
+                                <option value="draft">draft</option>
+                                <option value="published">published</option>
+                                <option value="measured">measured</option>
+                              </select>
+                              <input
+                                value={campaign.nextStep ?? ''}
+                                placeholder="next"
+                                onChange={(event) => updateCampaign(campaign.id, { nextStep: event.target.value || undefined })}
+                              />
+                              <select
+                                value={campaign.taskId ?? ''}
+                                onChange={(event) => updateCampaign(campaign.id, { taskId: event.target.value || undefined })}
+                              >
+                                <option value="">No task</option>
+                                {tasks.map((task) => (
+                                  <option key={task.id} value={task.id}>
+                                    {task.title}
+                                  </option>
+                                ))}
+                              </select>
+                              <input
+                                value={campaign.hypothesis ?? ''}
+                                placeholder="hypothesis"
+                                onChange={(event) => updateCampaign(campaign.id, { hypothesis: event.target.value || undefined })}
+                              />
+                              <input
+                                value={campaign.metric ?? ''}
+                                placeholder="metric"
+                                onChange={(event) => updateCampaign(campaign.id, { metric: event.target.value || undefined })}
+                              />
+                              <input
+                                value={campaign.result ?? ''}
+                                placeholder="result"
+                                onChange={(event) => updateCampaign(campaign.id, { result: event.target.value || undefined })}
+                              />
+                              <input
+                                type="date"
+                                value={campaign.date ?? ''}
+                                onChange={(event) => updateCampaign(campaign.id, { date: event.target.value || undefined })}
+                              />
+                              <div className="row-actions">
+                                <button
+                                  type="button"
+                                  className="ghost"
+                                  onClick={() => updateCampaign(campaign.id, { archivedAt: campaign.archivedAt ? undefined : new Date().toISOString() })}
+                                >
+                                  {campaign.archivedAt ? 'Unarchive' : 'Archive'}
+                                </button>
+                                <button type="button" className="ghost" onClick={() => deleteCampaign(campaign.id)}>
+                                  Delete
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="followup-section">
+                      <h4>Draft</h4>
+                      {campaignBuckets.draft.length === 0 ? (
+                        <p className="empty-state">None.</p>
+                      ) : (
+                        <ul className="stream-list">
+                          {campaignBuckets.draft.map((campaign) => (
+                            <li key={campaign.id} className="campaign-row">
+                              <input value={campaign.name} onChange={(event) => updateCampaign(campaign.id, { name: event.target.value })} />
+                              <select
+                                value={campaign.status}
+                                onChange={(event) => updateCampaign(campaign.id, { status: event.target.value as Campaign['status'] })}
+                              >
+                                <option value="idea">idea</option>
+                                <option value="draft">draft</option>
+                                <option value="published">published</option>
+                                <option value="measured">measured</option>
+                              </select>
+                              <input
+                                value={campaign.nextStep ?? ''}
+                                placeholder="next"
+                                onChange={(event) => updateCampaign(campaign.id, { nextStep: event.target.value || undefined })}
+                              />
+                              <select
+                                value={campaign.taskId ?? ''}
+                                onChange={(event) => updateCampaign(campaign.id, { taskId: event.target.value || undefined })}
+                              >
+                                <option value="">No task</option>
+                                {tasks.map((task) => (
+                                  <option key={task.id} value={task.id}>
+                                    {task.title}
+                                  </option>
+                                ))}
+                              </select>
+                              <input
+                                value={campaign.hypothesis ?? ''}
+                                placeholder="hypothesis"
+                                onChange={(event) => updateCampaign(campaign.id, { hypothesis: event.target.value || undefined })}
+                              />
+                              <input
+                                value={campaign.metric ?? ''}
+                                placeholder="metric"
+                                onChange={(event) => updateCampaign(campaign.id, { metric: event.target.value || undefined })}
+                              />
+                              <input
+                                value={campaign.result ?? ''}
+                                placeholder="result"
+                                onChange={(event) => updateCampaign(campaign.id, { result: event.target.value || undefined })}
+                              />
+                              <input
+                                type="date"
+                                value={campaign.date ?? ''}
+                                onChange={(event) => updateCampaign(campaign.id, { date: event.target.value || undefined })}
+                              />
+                              <div className="row-actions">
+                                <button
+                                  type="button"
+                                  className="ghost"
+                                  onClick={() => updateCampaign(campaign.id, { archivedAt: campaign.archivedAt ? undefined : new Date().toISOString() })}
+                                >
+                                  {campaign.archivedAt ? 'Unarchive' : 'Archive'}
+                                </button>
+                                <button type="button" className="ghost" onClick={() => deleteCampaign(campaign.id)}>
+                                  Delete
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="followup-section">
+                      <h4>Published</h4>
+                      {campaignBuckets.published.length === 0 ? (
+                        <p className="empty-state">None.</p>
+                      ) : (
+                        <ul className="stream-list">
+                          {campaignBuckets.published.map((campaign) => (
+                            <li key={campaign.id} className="campaign-row">
+                              <input value={campaign.name} onChange={(event) => updateCampaign(campaign.id, { name: event.target.value })} />
+                              <select
+                                value={campaign.status}
+                                onChange={(event) => updateCampaign(campaign.id, { status: event.target.value as Campaign['status'] })}
+                              >
+                                <option value="idea">idea</option>
+                                <option value="draft">draft</option>
+                                <option value="published">published</option>
+                                <option value="measured">measured</option>
+                              </select>
+                              <input
+                                value={campaign.nextStep ?? ''}
+                                placeholder="next"
+                                onChange={(event) => updateCampaign(campaign.id, { nextStep: event.target.value || undefined })}
+                              />
+                              <select
+                                value={campaign.taskId ?? ''}
+                                onChange={(event) => updateCampaign(campaign.id, { taskId: event.target.value || undefined })}
+                              >
+                                <option value="">No task</option>
+                                {tasks.map((task) => (
+                                  <option key={task.id} value={task.id}>
+                                    {task.title}
+                                  </option>
+                                ))}
+                              </select>
+                              <input
+                                value={campaign.hypothesis ?? ''}
+                                placeholder="hypothesis"
+                                onChange={(event) => updateCampaign(campaign.id, { hypothesis: event.target.value || undefined })}
+                              />
+                              <input
+                                value={campaign.metric ?? ''}
+                                placeholder="metric"
+                                onChange={(event) => updateCampaign(campaign.id, { metric: event.target.value || undefined })}
+                              />
+                              <input
+                                value={campaign.result ?? ''}
+                                placeholder="result"
+                                onChange={(event) => updateCampaign(campaign.id, { result: event.target.value || undefined })}
+                              />
+                              <input
+                                type="date"
+                                value={campaign.date ?? ''}
+                                onChange={(event) => updateCampaign(campaign.id, { date: event.target.value || undefined })}
+                              />
+                              <div className="row-actions">
+                                <button
+                                  type="button"
+                                  className="ghost"
+                                  onClick={() => updateCampaign(campaign.id, { archivedAt: campaign.archivedAt ? undefined : new Date().toISOString() })}
+                                >
+                                  {campaign.archivedAt ? 'Unarchive' : 'Archive'}
+                                </button>
+                                <button type="button" className="ghost" onClick={() => deleteCampaign(campaign.id)}>
+                                  Delete
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             </div>

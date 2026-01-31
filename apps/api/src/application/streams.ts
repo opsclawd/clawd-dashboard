@@ -6,6 +6,8 @@ export type ChecklistItem = {
   title: string;
   status: 'todo' | 'in_progress' | 'done';
   notes?: string;
+  taskId?: string;
+  archivedAt?: string;
 };
 
 export type JobApplication = {
@@ -17,6 +19,7 @@ export type JobApplication = {
   followUpDate?: string;
   resume?: string;
   taskId?: string;
+  archivedAt?: string;
 };
 
 export type Campaign = {
@@ -27,6 +30,9 @@ export type Campaign = {
   metric?: string;
   result?: string;
   date?: string;
+  taskId?: string;
+  nextStep?: string;
+  archivedAt?: string;
 };
 
 const formatSection = (title: string) => `## ${title}\n`;
@@ -71,7 +77,10 @@ export class StreamService {
   }
 
   reportCannabisChecklistMarkdown(): string {
-    const items = this.listCannabisChecklist();
+    const allItems = this.listCannabisChecklist();
+    const items = allItems.filter((item) => !item.archivedAt);
+    const archived = allItems.filter((item) => item.archivedAt);
+
     const byStatus = items.reduce(
       (acc, item) => {
         acc[item.status].push(item);
@@ -83,7 +92,9 @@ export class StreamService {
     const lines: string[] = [];
     lines.push(`# Cannabis (ON) checklist report`);
     lines.push('');
-    lines.push(`Total: ${items.length} (todo ${byStatus.todo.length}, in_progress ${byStatus.in_progress.length}, done ${byStatus.done.length})`);
+    lines.push(
+      `Active: ${items.length} (todo ${byStatus.todo.length}, in_progress ${byStatus.in_progress.length}, done ${byStatus.done.length}) • Archived: ${archived.length}`
+    );
     lines.push('');
 
     (['todo', 'in_progress', 'done'] as const).forEach((status) => {
@@ -93,18 +104,39 @@ export class StreamService {
         lines.push('- (none)');
       } else {
         sectionItems.forEach((item) => {
-          const noteSuffix = item.notes ? ` — ${item.notes}` : '';
-          lines.push(`- ${item.title}${noteSuffix}`);
+          const meta: string[] = [];
+          if (item.taskId) meta.push(`task: ${item.taskId}`);
+          if (item.notes) meta.push(item.notes);
+          const suffix = meta.length ? ` — ${meta.join(' | ')}` : '';
+          lines.push(`- ${item.title}${suffix}`);
         });
       }
       lines.push('');
     });
 
+    lines.push(formatSection('archived'));
+    if (archived.length === 0) {
+      lines.push('- (none)');
+    } else {
+      archived.forEach((item) => {
+        const meta: string[] = [];
+        if (item.taskId) meta.push(`task: ${item.taskId}`);
+        if (item.notes) meta.push(item.notes);
+        if (item.archivedAt) meta.push(`archived: ${item.archivedAt}`);
+        const suffix = meta.length ? ` — ${meta.join(' | ')}` : '';
+        lines.push(`- ${item.title}${suffix}`);
+      });
+    }
+    lines.push('');
+
     return lines.join('\n').trim() + '\n';
   }
 
   reportJobApplicationsMarkdown(): string {
-    const items = this.listJobApplications();
+    const allItems = this.listJobApplications();
+    const items = allItems.filter((app) => !app.archivedAt);
+    const archived = allItems.filter((app) => app.archivedAt);
+
     const byStatus = items.reduce(
       (acc, item) => {
         acc[item.status].push(item);
@@ -123,7 +155,7 @@ export class StreamService {
     lines.push(`# Job search report`);
     lines.push('');
     lines.push(
-      `Total: ${items.length} (draft ${byStatus.draft.length}, applied ${byStatus.applied.length}, interview ${byStatus.interview.length}, offer ${byStatus.offer.length}, rejected ${byStatus.rejected.length})`
+      `Active: ${items.length} (draft ${byStatus.draft.length}, applied ${byStatus.applied.length}, interview ${byStatus.interview.length}, offer ${byStatus.offer.length}, rejected ${byStatus.rejected.length}) • Archived: ${archived.length}`
     );
     lines.push('');
 
@@ -146,11 +178,31 @@ export class StreamService {
       lines.push('');
     });
 
+    lines.push(formatSection('archived'));
+    if (archived.length === 0) {
+      lines.push('- (none)');
+    } else {
+      archived.forEach((app) => {
+        const bits: string[] = [`${app.company} — ${app.role}`];
+        if (app.followUpDate) bits.push(`follow-up: ${app.followUpDate}`);
+        if (app.resume) bits.push(`resume: ${app.resume}`);
+        if (app.taskId) bits.push(`task: ${app.taskId}`);
+        if (app.archivedAt) bits.push(`archived: ${app.archivedAt}`);
+        const suffix = bits.length > 1 ? ` (${bits.slice(1).join(', ')})` : '';
+        const link = app.link ? ` — ${app.link}` : '';
+        lines.push(`- ${bits[0]}${suffix}${link}`);
+      });
+    }
+    lines.push('');
+
     return lines.join('\n').trim() + '\n';
   }
 
   reportMarketingCampaignsMarkdown(): string {
-    const items = this.listMarketingCampaigns();
+    const allItems = this.listMarketingCampaigns();
+    const items = allItems.filter((campaign) => !campaign.archivedAt);
+    const archived = allItems.filter((campaign) => campaign.archivedAt);
+
     const byStatus = items.reduce(
       (acc, item) => {
         acc[item.status].push(item);
@@ -168,7 +220,7 @@ export class StreamService {
     lines.push(`# Marketing experiments report`);
     lines.push('');
     lines.push(
-      `Total: ${items.length} (idea ${byStatus.idea.length}, draft ${byStatus.draft.length}, published ${byStatus.published.length}, measured ${byStatus.measured.length})`
+      `Active: ${items.length} (idea ${byStatus.idea.length}, draft ${byStatus.draft.length}, published ${byStatus.published.length}, measured ${byStatus.measured.length}) • Archived: ${archived.length}`
     );
     lines.push('');
 
@@ -183,6 +235,8 @@ export class StreamService {
           if (campaign.date) details.push(campaign.date);
           if (campaign.metric) details.push(`metric: ${campaign.metric}`);
           if (campaign.result) details.push(`result: ${campaign.result}`);
+          if (campaign.taskId) details.push(`task: ${campaign.taskId}`);
+          if (campaign.nextStep) details.push(`next: ${campaign.nextStep}`);
           const suffix = details.length ? ` (${details.join(', ')})` : '';
           const hypo = campaign.hypothesis ? ` — ${campaign.hypothesis}` : '';
           lines.push(`- ${campaign.name}${suffix}${hypo}`);
@@ -190,6 +244,25 @@ export class StreamService {
       }
       lines.push('');
     });
+
+    lines.push(formatSection('archived'));
+    if (archived.length === 0) {
+      lines.push('- (none)');
+    } else {
+      archived.forEach((campaign) => {
+        const details: string[] = [];
+        if (campaign.date) details.push(campaign.date);
+        if (campaign.metric) details.push(`metric: ${campaign.metric}`);
+        if (campaign.result) details.push(`result: ${campaign.result}`);
+        if (campaign.taskId) details.push(`task: ${campaign.taskId}`);
+        if (campaign.nextStep) details.push(`next: ${campaign.nextStep}`);
+        if (campaign.archivedAt) details.push(`archived: ${campaign.archivedAt}`);
+        const suffix = details.length ? ` (${details.join(', ')})` : '';
+        const hypo = campaign.hypothesis ? ` — ${campaign.hypothesis}` : '';
+        lines.push(`- ${campaign.name}${suffix}${hypo}`);
+      });
+    }
+    lines.push('');
 
     return lines.join('\n').trim() + '\n';
   }

@@ -12,7 +12,7 @@ export const registerStreamRoutes = (fastify: FastifyInstance, service: StreamSe
   fastify.get('/api/v1/streams/cannabis/checklist/export', async (req, res) => {
     const items = service.listCannabisChecklist();
     res.header('content-type', 'text/csv');
-    const csv = ['id,title,status,notes', ...items.map((i) => `${i.id},${i.title},${i.status},${i.notes ?? ''}`)].join('\n');
+    const csv = ['id,title,status,notes,taskId,archivedAt', ...items.map((i) => `${i.id},${i.title},${i.status},${i.notes ?? ''},${i.taskId ?? ''},${i.archivedAt ?? ''}`)].join('\n');
     return csv;
   });
   fastify.get('/api/v1/streams/cannabis/checklist/report.md', async (req, res) => {
@@ -30,7 +30,7 @@ export const registerStreamRoutes = (fastify: FastifyInstance, service: StreamSe
   fastify.get('/api/v1/streams/job-search/applications/export', async (req, res) => {
     const items = service.listJobApplications();
     res.header('content-type', 'text/csv');
-    const csv = ['id,company,role,link,status,followUpDate,resume', ...items.map((i) => `${i.id},${i.company},${i.role},${i.link ?? ''},${i.status},${i.followUpDate ?? ''},${i.resume ?? ''}`)].join('\n');
+    const csv = ['id,company,role,link,status,followUpDate,resume,taskId,archivedAt', ...items.map((i) => `${i.id},${i.company},${i.role},${i.link ?? ''},${i.status},${i.followUpDate ?? ''},${i.resume ?? ''},${i.taskId ?? ''},${i.archivedAt ?? ''}`)].join('\n');
     return csv;
   });
   fastify.get('/api/v1/streams/job-search/applications/report.md', async (req, res) => {
@@ -48,7 +48,7 @@ export const registerStreamRoutes = (fastify: FastifyInstance, service: StreamSe
   fastify.get('/api/v1/streams/marketing/campaigns/export', async (req, res) => {
     const items = service.listMarketingCampaigns();
     res.header('content-type', 'text/csv');
-    const csv = ['id,name,status,hypothesis,metric,result,date', ...items.map((i) => `${i.id},${i.name},${i.status},${i.hypothesis ?? ''},${i.metric ?? ''},${i.result ?? ''},${i.date ?? ''}`)].join('\n');
+    const csv = ['id,name,status,hypothesis,metric,result,date,taskId,nextStep,archivedAt', ...items.map((i) => `${i.id},${i.name},${i.status},${i.hypothesis ?? ''},${i.metric ?? ''},${i.result ?? ''},${i.date ?? ''},${i.taskId ?? ''},${i.nextStep ?? ''},${i.archivedAt ?? ''}`)].join('\n');
     return csv;
   });
   fastify.get('/api/v1/streams/marketing/campaigns/report.md', async (req, res) => {

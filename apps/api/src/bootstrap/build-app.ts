@@ -15,6 +15,7 @@ import { registerRoutes } from '../interface/register-routes';
 import { GitRepository } from '../infrastructure/git';
 import { GitService } from '../application/git';
 import { SavedFilterRepository } from '../infrastructure/repositories/saved-filter-repository';
+import { IndexService } from '../application/indexer';
 
 export type AppDeps = {
   rootDir?: string;
@@ -34,6 +35,7 @@ export const buildApp = async (deps: AppDeps = {}) => {
   const artifactRepository = new ArtifactRepository(ROOT, STREAMS_PATH);
   const gitRepository = new GitRepository(ROOT);
   const savedFilterRepository = new SavedFilterRepository(SAVED_FILTERS_PATH);
+  const indexService = new IndexService(ROOT);
 
   const eventService = new EventService(eventRepository);
   const taskService = new TaskService(taskRepository);
@@ -46,7 +48,7 @@ export const buildApp = async (deps: AppDeps = {}) => {
     credentials: false
   });
 
-  registerRoutes(fastify, { eventService, taskService, artifactService, gitService, savedFilterService });
+  registerRoutes(fastify, { eventService, taskService, artifactService, gitService, savedFilterService, indexService });
 
   return fastify;
 };

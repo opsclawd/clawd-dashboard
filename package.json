@@ -13,11 +13,16 @@
     "build": "npm run build -ws",
     "typecheck": "npm run typecheck -ws",
     "lint": "eslint \"apps/**/*.{ts,tsx,js,mjs}\" \"packages/**/*.{ts,tsx,js,mjs}\" \"scripts/**/*.{ts,tsx,js,mjs}\"",
-    "test": "npm run test -w @clawd/api"
+    "test": "npm run test -w @clawd/api",
+    "index:rebuild": "tsx scripts/indexer.mts rebuild",
+    "index:tick": "tsx scripts/indexer.mts tick"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.1"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.6.2"
   }
 }

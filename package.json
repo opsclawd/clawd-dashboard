@@ -15,9 +15,11 @@
     "lint": "eslint \"apps/**/*.{ts,tsx,js,mjs}\" \"packages/**/*.{ts,tsx,js,mjs}\" \"scripts/**/*.{ts,tsx,js,mjs}\"",
     "test": "npm run test -w @clawd/api",
     "index:rebuild": "tsx scripts/indexer.mts rebuild",
-    "index:tick": "tsx scripts/indexer.mts tick"
+    "index:tick": "tsx scripts/indexer.mts tick",
+    "verify:log": "node scripts/verify-log.mjs"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.1"

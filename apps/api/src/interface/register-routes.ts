@@ -7,7 +7,7 @@ import { registerArtifactRoutes } from './routes/artifacts';
 import { registerEventRoutes } from './routes/events';
 import { registerGitRoutes } from './routes/git';
 import { registerHealthRoute } from './routes/health';
-import { registerIndexRoutes } from './routes/indexer';
+import { registerIndexerRoutes } from './routes/indexer';
 import { registerSavedFilterRoutes } from './routes/saved-filters';
 import { registerTaskRoutes } from './routes/tasks';
 
@@ -28,5 +28,5 @@ export const registerRoutes = (
   registerArtifactRoutes(fastify, deps.artifactService, deps.gitService);
   registerGitRoutes(fastify, deps.gitService);
   registerSavedFilterRoutes(fastify, deps.savedFilterService);
-  registerIndexRoutes(fastify, deps.indexService);
+  registerIndexerRoutes(fastify, deps.indexService);
 };

@@ -13,6 +13,11 @@ export class EventRepository implements EventRepositoryPort {
     return readJsonLines<Event>(this.filePath);
   }
 
+  readLast() {
+    const items = readJsonLines<Event>(this.filePath);
+    return items.length ? items[items.length - 1] : null;
+  }
+
   append(event: Event) {
     appendJsonLine(this.filePath, JSON.stringify(event));
   }

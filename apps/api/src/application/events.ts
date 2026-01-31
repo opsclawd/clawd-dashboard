@@ -12,6 +12,7 @@ export type EventFilters = {
 
 export type EventRepositoryPort = {
   readAll: () => Event[];
+  readLast?: () => Event | null;
   append: (event: Event) => void;
 };
 
@@ -65,7 +66,31 @@ export class EventService {
       details: parsed.data.details ? redactObject(parsed.data.details) : undefined
     };
 
-    this.repository.append(redacted);
+    const prevHash = this.repository.readLast ? this.repository.readLast()?.hash : this.repository.readAll().at(-1)?.hash;
+    const hash = computeEventHash({ ...redacted, prevHash });
+
+    this.repository.append({ ...redacted, prevHash, hash });
     return { success: true };
   }
 }
+
+const computeEventHash = (event: Event) => {
+  const { hash, ...rest } = event;
+  const canonical = stableStringify(rest);
+  return sha256(`${event.prevHash ?? ''}${canonical}`);
+};
+
+const sha256 = (value: string) => {
+  const crypto = require('node:crypto') as typeof import('node:crypto');
+  return crypto.createHash('sha256').update(value).digest('hex');
+};
+
+const stableStringify = (input: unknown): string => {
+  if (input === null || typeof input !== 'object') return JSON.stringify(input);
+  if (Array.isArray(input)) return `[${input.map((item) => stableStringify(item)).join(',')}]`;
+  const entries = Object.entries(input as Record<string, unknown>)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `"${key}":${stableStringify(value)}`);
+  return `{${entries.join(',')}}`;
+};
+

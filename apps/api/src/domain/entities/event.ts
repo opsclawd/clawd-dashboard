@@ -20,7 +20,9 @@ export const EventSchema = z.object({
   details: z.record(z.unknown()).optional(),
   artifacts: z.array(ArtifactSchema).optional(),
   tags: z.array(z.string()).optional(),
-  source: z.object({ session: z.string().optional(), messageId: z.string().optional() }).optional()
+  source: z.object({ session: z.string().optional(), messageId: z.string().optional() }).optional(),
+  prevHash: z.string().optional(),
+  hash: z.string().optional()
 });
 
 export type Event = z.infer<typeof EventSchema>;

@@ -377,6 +377,12 @@ button.primary:hover {
   align-items: center;
 }
 
+.job-row-actions {
+  display: inline-flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
 .campaign-row {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr 1.4fr 1fr 1fr 1fr auto;
@@ -470,6 +476,33 @@ button.primary:hover {
   align-items: center;
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+.followup-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 8px 0;
+}
+
+.followup-bucket {
+  border: 1px solid var(--border);
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 6px 10px;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.followup-section {
+  margin-top: 12px;
+}
+
+.followup-section h4 {
+  margin: 10px 0 6px;
+  font-size: 0.9rem;
 }
 
 .pagination-controls {

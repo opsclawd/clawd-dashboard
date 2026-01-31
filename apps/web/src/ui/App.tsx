@@ -51,6 +51,7 @@ type ChecklistItem = {
   title: string;
   status: 'todo' | 'in_progress' | 'done';
   notes?: string;
+  archivedAt?: string;
 };
 
 type JobApplication = {
@@ -62,6 +63,7 @@ type JobApplication = {
   followUpDate?: string;
   resume?: string;
   taskId?: string;
+  archivedAt?: string;
 };
 
 type Campaign = {
@@ -72,6 +74,9 @@ type Campaign = {
   metric?: string;
   result?: string;
   date?: string;
+  taskId?: string;
+  nextStep?: string;
+  archivedAt?: string;
 };
 
 type SavedFilter = {
@@ -157,6 +162,19 @@ const formatDetailValue = (value: unknown) => {
     return JSON.stringify(value, null, 2);
   }
   return String(value);
+};
+
+const formatDayKey = (value: Date) => {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const addDays = (value: Date, days: number) => {
+  const next = new Date(value);
+  next.setDate(next.getDate() + days);
+  return next;
 };
 
 type CommitPreview = {
@@ -252,6 +270,8 @@ export function App() {
   const [newAppFollowUpDate, setNewAppFollowUpDate] = useState('');
   const [newAppResume, setNewAppResume] = useState('');
   const [newAppTaskId, setNewAppTaskId] = useState('');
+
+  const [showArchivedJobApps, setShowArchivedJobApps] = useState(false);
 
   const [newCampaignName, setNewCampaignName] = useState('');
   const [newCampaignStatus, setNewCampaignStatus] = useState<Campaign['status']>('idea');
@@ -513,6 +533,58 @@ export function App() {
     await persistJobApplications(updated);
   };
 
+  const renderJobAppRow = (app: JobApplication) => (
+    <li key={app.id} className="job-row">
+      <input value={app.company} onChange={(event) => updateJobApplication(app.id, { company: event.target.value })} />
+      <input value={app.role} onChange={(event) => updateJobApplication(app.id, { role: event.target.value })} />
+      <input
+        value={app.link ?? ''}
+        placeholder="link"
+        onChange={(event) => updateJobApplication(app.id, { link: event.target.value || undefined })}
+      />
+      <select
+        value={app.status}
+        onChange={(event) => updateJobApplication(app.id, { status: event.target.value as JobApplication['status'] })}
+      >
+        <option value="draft">draft</option>
+        <option value="applied">applied</option>
+        <option value="interview">interview</option>
+        <option value="offer">offer</option>
+        <option value="rejected">rejected</option>
+      </select>
+      <input
+        type="date"
+        value={app.followUpDate ?? ''}
+        onChange={(event) => updateJobApplication(app.id, { followUpDate: event.target.value || undefined })}
+      />
+      <input
+        value={app.resume ?? ''}
+        placeholder="resume"
+        onChange={(event) => updateJobApplication(app.id, { resume: event.target.value || undefined })}
+      />
+      <select value={app.taskId ?? ''} onChange={(event) => updateJobApplication(app.id, { taskId: event.target.value || undefined })}>
+        <option value="">No task</option>
+        {tasks.map((task) => (
+          <option key={task.id} value={task.id}>
+            {task.title}
+          </option>
+        ))}
+      </select>
+      <div className="job-row-actions">
+        <button
+          type="button"
+          className="ghost"
+          onClick={() => updateJobApplication(app.id, { archivedAt: app.archivedAt ? undefined : new Date().toISOString() })}
+        >
+          {app.archivedAt ? 'Unarchive' : 'Archive'}
+        </button>
+        <button type="button" className="ghost" onClick={() => deleteJobApplication(app.id)}>
+          Delete
+        </button>
+      </div>
+    </li>
+  );
+
   const persistMarketingCampaigns = async (nextItems: Campaign[]) => {
     await fetch('http://127.0.0.1:5174/api/v1/streams/marketing/campaigns', {
       method: 'POST',
@@ -582,6 +654,42 @@ export function App() {
     });
     return mapped;
   }, [tasks]);
+
+  const jobAppsActive = useMemo(
+    () => (showArchivedJobApps ? jobApplications : jobApplications.filter((app) => !app.archivedAt)),
+    [jobApplications, showArchivedJobApps]
+  );
+
+  const jobFollowUpBuckets = useMemo(() => {
+    const today = new Date();
+    const todayKey = formatDayKey(today);
+    const dueSoonKey = formatDayKey(addDays(today, 7));
+
+    const overdue: JobApplication[] = [];
+    const dueSoon: JobApplication[] = [];
+    const none: JobApplication[] = [];
+
+    jobAppsActive.forEach((app) => {
+      if (!app.followUpDate) {
+        none.push(app);
+        return;
+      }
+      if (app.followUpDate < todayKey) {
+        overdue.push(app);
+        return;
+      }
+      if (app.followUpDate <= dueSoonKey) {
+        dueSoon.push(app);
+        return;
+      }
+    });
+
+    const byDate = (a: JobApplication, b: JobApplication) => (a.followUpDate ?? '').localeCompare(b.followUpDate ?? '');
+    overdue.sort(byDate);
+    dueSoon.sort(byDate);
+
+    return { todayKey, dueSoonKey, overdue, dueSoon, none };
+  }, [jobAppsActive]);
 
   const filteredEvents = useMemo(() => {
     const query = eventSearch.trim().toLowerCase();
@@ -903,11 +1011,7 @@ export function App() {
                     <option value="offer">offer</option>
                     <option value="rejected">rejected</option>
                   </select>
-                  <input
-                    type="date"
-                    value={newAppFollowUpDate}
-                    onChange={(event) => setNewAppFollowUpDate(event.target.value)}
-                  />
+                  <input type="date" value={newAppFollowUpDate} onChange={(event) => setNewAppFollowUpDate(event.target.value)} />
                   <input
                     placeholder="Resume version"
                     value={newAppResume}
@@ -925,56 +1029,67 @@ export function App() {
                     Add
                   </button>
                 </div>
-                {jobApplications.length === 0 ? (
+
+                <div className="followup-summary">
+                  <div className="followup-bucket">
+                    <strong>Overdue</strong>
+                    <span>{jobFollowUpBuckets.overdue.length}</span>
+                  </div>
+                  <div className="followup-bucket">
+                    <strong>Due soon (7d)</strong>
+                    <span>{jobFollowUpBuckets.dueSoon.length}</span>
+                  </div>
+                  <div className="followup-bucket">
+                    <strong>No date</strong>
+                    <span>{jobFollowUpBuckets.none.length}</span>
+                  </div>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={showArchivedJobApps}
+                      onChange={(event) => setShowArchivedJobApps(event.target.checked)}
+                    />
+                    <span>show archived</span>
+                  </label>
+                </div>
+
+                {jobAppsActive.length === 0 ? (
                   <p className="empty-state">No applications yet.</p>
                 ) : (
-                  <ul className="stream-list">
-                    {jobApplications.map((app) => (
-                      <li key={app.id} className="job-row">
-                        <input value={app.company} onChange={(event) => updateJobApplication(app.id, { company: event.target.value })} />
-                        <input value={app.role} onChange={(event) => updateJobApplication(app.id, { role: event.target.value })} />
-                        <input
-                          value={app.link ?? ''}
-                          placeholder="link"
-                          onChange={(event) => updateJobApplication(app.id, { link: event.target.value || undefined })}
-                        />
-                        <select
-                          value={app.status}
-                          onChange={(event) => updateJobApplication(app.id, { status: event.target.value as JobApplication['status'] })}
-                        >
-                          <option value="draft">draft</option>
-                          <option value="applied">applied</option>
-                          <option value="interview">interview</option>
-                          <option value="offer">offer</option>
-                          <option value="rejected">rejected</option>
-                        </select>
-                        <input
-                          type="date"
-                          value={app.followUpDate ?? ''}
-                          onChange={(event) => updateJobApplication(app.id, { followUpDate: event.target.value || undefined })}
-                        />
-                        <input
-                          value={app.resume ?? ''}
-                          placeholder="resume"
-                          onChange={(event) => updateJobApplication(app.id, { resume: event.target.value || undefined })}
-                        />
-                        <select
-                          value={app.taskId ?? ''}
-                          onChange={(event) => updateJobApplication(app.id, { taskId: event.target.value || undefined })}
-                        >
-                          <option value="">No task</option>
-                          {tasks.map((task) => (
-                            <option key={task.id} value={task.id}>
-                              {task.title}
-                            </option>
-                          ))}
-                        </select>
-                        <button type="button" className="ghost" onClick={() => deleteJobApplication(app.id)}>
-                          Delete
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <div className="followup-section">
+                      <h4>Overdue follow-ups</h4>
+                      {jobFollowUpBuckets.overdue.length === 0 ? (
+                        <p className="empty-state">None.</p>
+                      ) : (
+                        <ul className="stream-list">
+                          {jobFollowUpBuckets.overdue.map(renderJobAppRow)}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="followup-section">
+                      <h4>Due soon (next 7 days)</h4>
+                      {jobFollowUpBuckets.dueSoon.length === 0 ? (
+                        <p className="empty-state">None.</p>
+                      ) : (
+                        <ul className="stream-list">
+                          {jobFollowUpBuckets.dueSoon.map(renderJobAppRow)}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="followup-section">
+                      <h4>No follow-up date</h4>
+                      {jobFollowUpBuckets.none.length === 0 ? (
+                        <p className="empty-state">None.</p>
+                      ) : (
+                        <ul className="stream-list">
+                          {jobFollowUpBuckets.none.map(renderJobAppRow)}
+                        </ul>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
 

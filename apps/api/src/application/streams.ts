@@ -6,6 +6,7 @@ export type ChecklistItem = {
   title: string;
   status: 'todo' | 'in_progress' | 'done';
   notes?: string;
+  archivedAt?: string;
 };
 
 export type JobApplication = {
@@ -17,6 +18,7 @@ export type JobApplication = {
   followUpDate?: string;
   resume?: string;
   taskId?: string;
+  archivedAt?: string;
 };
 
 export type Campaign = {
@@ -27,6 +29,9 @@ export type Campaign = {
   metric?: string;
   result?: string;
   date?: string;
+  taskId?: string;
+  nextStep?: string;
+  archivedAt?: string;
 };
 
 const formatSection = (title: string) => `## ${title}\n`;
@@ -183,6 +188,8 @@ export class StreamService {
           if (campaign.date) details.push(campaign.date);
           if (campaign.metric) details.push(`metric: ${campaign.metric}`);
           if (campaign.result) details.push(`result: ${campaign.result}`);
+          if (campaign.taskId) details.push(`task: ${campaign.taskId}`);
+          if (campaign.nextStep) details.push(`next: ${campaign.nextStep}`);
           const suffix = details.length ? ` (${details.join(', ')})` : '';
           const hypo = campaign.hypothesis ? ` — ${campaign.hypothesis}` : '';
           lines.push(`- ${campaign.name}${suffix}${hypo}`);

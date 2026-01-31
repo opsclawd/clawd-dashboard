@@ -228,6 +228,7 @@ export function App() {
     if (eventSearch) params.set('q', eventSearch);
     params.set('limit', String(eventLimit));
     params.set('offset', String(eventOffset));
+    params.set('indexed', '1');
     const url = `http://127.0.0.1:5174/api/v1/events${params.toString() ? `?${params}` : ''}`;
     fetch(url)
       .then((r) => r.json())

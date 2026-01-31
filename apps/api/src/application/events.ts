@@ -32,7 +32,7 @@ export class EventService {
     this.repository = repository;
   }
 
-  listEvents(filters: EventFilters) {
+  listEvents(filters: EventFilters, useIndex = false) {
     let items = this.repository.readAll();
     if (filters.stream) items = items.filter((event) => event.stream === filters.stream);
     if (filters.type) items = items.filter((event) => event.type === filters.type);

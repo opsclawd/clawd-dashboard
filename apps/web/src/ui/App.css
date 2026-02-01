@@ -980,6 +980,10 @@ button.link-button {
 }
 
 .artifact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
 .artifact-path {
   font-family: 'JetBrains Mono', 'SFMono-Regular', monospace;

@@ -16,7 +16,8 @@
     "test": "npm run test -w @clawd/api",
     "index:rebuild": "tsx scripts/indexer.mts rebuild",
     "index:tick": "tsx scripts/indexer.mts tick",
-    "verify:log": "node scripts/verify-log.mjs"
+    "verify:log": "node scripts/verify-log.mjs",
+    "rehash:log": "node scripts/rehash-log.mjs"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

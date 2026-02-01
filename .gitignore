@@ -15,10 +15,17 @@ data/index.sqlite
 data/indexer-offset.json
 data/reminders.json
 data/digest-subs.json
+data/events.jsonl.bak
 
 # artifacts can be large
 artifacts/exports/
 artifacts/screenshots/
+
+# test artifacts
+apps/api/coverage/
+apps/api/test-*.jsonl
+apps/data/
+apps/streams/
 
 # private/one-off
 .trash/
